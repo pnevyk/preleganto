@@ -15,7 +15,8 @@
         "prepare": "npm run build"
     },
     "files": [
-        "lib"
+        "lib",
+        "themes"
     ],
     "bin": {
         "preleganto": "./index.js"
