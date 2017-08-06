@@ -9,6 +9,10 @@ import moment from  'moment';
 import Compiler from './build/compiler';
 import { log, error, newline, logo } from './logger';
 
+const commands = {
+    build: 'Build a preleganto presentation into HTML file',
+};
+
 const options = {
     build: {
         input: {
@@ -19,13 +23,13 @@ const options = {
         output: {
             alias: 'o',
             default: 'slides.html',
-            description: 'An output file'
+            description: 'An output file',
         },
         watch: {
             alias: 'w',
             boolean: true,
             default: false,
-            description: 'Watch the source file and rebuild presentation on change'
+            description: 'Watch the source file and rebuild presentation on change',
         }
     }
 };
@@ -51,8 +55,8 @@ function build(input: string, output: string, options: { rootpath: string }) {
 
 yargs
     .version()
-    .command('build', 'Build a preleganto presentation', options.build, argv => {
-        let options = {
+    .command('build', commands.build, options.build, argv => {
+        const options = {
             rootpath: path.join(process.cwd(), path.dirname(argv.input))
         };
 
