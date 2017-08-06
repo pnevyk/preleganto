@@ -1,0 +1,11 @@
+body {
+    overflow: hidden;
+}
+
+main.preleganto-presentation > section.preleganto-slide {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 100px;
+    overflow: hidden;
+}

@@ -1,0 +1,46 @@
+:title: Preleganto
+:author: Petr Nevyhoštěný
+:ratio: 16:10
+
+'''
+
+= Introduction
+
+* Another in-browser presentation tool
+* Simple yet elegant design
+* Presentations written in limited subset of
+link:http://asciidoctor.org/[AsciiDoc] syntax (very similar to Markdown)
+* Convenient command line interface
+* Advanced features
+
+'''
+
+= Notable Features
+
+* Convenient "source code to presentation" generation -- no manual HTML editing
+* Built-in and custom themes and layouts
+* Automatic typographic link:https://github.com/pnevyk/tipograph[correction]
+(e.g., "quotes", symbols such as (tm), ...)
+* Out-of-the-box support for:
+.. Source code highlighting
+.. math:{LaTeX{}}[] typesetting
+
+'''
+
+= Usage
+
+[source, asciidoc]
+----
+:title: Example
+
+'''
+
+= First slide
+
+* Hellow world
+----
+
+[source, bash]
+----
+preleganto build --input presentation.adoc
+----

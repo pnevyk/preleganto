@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css?family=PT+Sans|Ubuntu+Mono');
+
+/* === COMMON === */
+
+body {
+    background-color: #91a19b;
+    font-size: 5vh;
+    color: #362623;
+    font-family: 'PT Sans', sans-serif;
+}
+
+.preleganto-slide {
+    background-color: #f0ece3;
+    box-shadow: 0 0 10px 3px rgba(0, 0, 0, 1);
+}
+
+.preleganto-slide > section {
+    padding: 7vh 7vw 7vh 7vw;
+}
+
+header, footer {
+    color: #6d4d47;
+}
+
+h1 {
+    margin-top: 1vh;
+    font-size: 8vh;
+}
+
+h2 {
+    margin-top: 1vh;
+    font-size: 6vh;
+}
+
+h3 {
+    margin-top: 1vh;
+    font-size: 5vh;
+}
+
+pre, code {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+ul, ol {
+    padding-left: 4vw;
+    list-style: none;
+}
+
+ul > li, ol > li {
+    margin-bottom: 1vh;
+    line-height: 1.35;
+}
+
+ol > li {
+    counter-increment: list1;
+}
+
+ol > li:before {
+    content: counter(list1);
+}
+
+ol > ol > li {
+    counter-increment: list2;
+}
+
+ol > ol > li:before {
+    content: counter(list2);
+}
+
+ol > ol > ol > li {
+    counter-increment: list3;
+}
+
+ol > ol > ol > li:before {
+    content: counter(list3);
+}
+
+ul > li:before {
+    content: "\27a4";
+    color: #6d4d47;
+    font-size: 4.2vh;
+    margin-right: 2vw;
+    margin-left: -4vw;
+    position: relative;
+    top: -0.4vh;
+}
+
+ol > li:before {
+    background-color: #6d4d47;
+    color: #f0ece3;
+    font-weight: bold;
+    margin-right: 1.75vw;
+    margin-left: -3.75vw;
+    font-family: 'Ubuntu Mono', monospace;
+    font-size: 2.5vh;
+    position: relative;
+    top: -0.9vh;
+    padding-left: 0.7vh;
+    padding-right: 0.7vh;
+    border: 3px solid #6d4d47;
+    border-radius: 2.5vh;
+}
+
+a {
+    text-decoration: none;
+    color: #a01d22;
+}
+
+/* === OPENING === */
+
+.opening {
+    margin-top: 15vh;
+    margin-left: 10vh;
+    margin-right: 10vh;
+    text-align: center;
+}
+
+.opening h1 {
+    font-size: 12vh;
+}
+
+.opening h2 {
+    font-size: 8vh;
+}
+
+.opening h3 {
+    font-size: 6vh;
+}
+
+/* === CLOSING === */
+
+.closing {
+    margin-top: 25vh;
+    margin-left: 10vh;
+    margin-right: 10vh;
+    text-align: center;
+}
+
+.closing h1 {
+    font-size: 12vh;
+}
+
+/* === BLOCKS and MACROS === */
+
+.preleganto-inline-math {
+    background-color: #ece3e0;
+    padding: 0.5vh 1vh 0.5vh 1vh;
+    border-radius: 0.5vh;
+    font-size: 75%;
+}
+
+.preleganto-display-math {
+    overflow: visible;
+    display: table; /* inline-block does not work, don't know why */
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2vh;
+    background-color: #ece3e0;
+    border-radius: 1vh;
+}
+
+code {
+    font-size: 75%;
+    color: #f0ece3;
+    background-color: #362623;
+    padding: 0.5vh 1vh 0.5vh 1vh;
+    border-radius: 0.5vh;
+    position: relative;
+    top: -2px;
+}
+
+.preleganto-source {
+    background-color: #362623;
+    padding: 2vh;
+    border-radius: 1vh;
+}
+
+.katex {
+    white-space: normal;
+}
