@@ -1,6 +1,13 @@
 // @flow
 
 (function () {
+    type ServerAction = {
+        name: 'goTo',
+        index: number,
+    } | {
+        name: 'sync'
+    };
+
     function select(selector: string): ?HTMLElement {
         return document.querySelector(selector);
     }
@@ -31,6 +38,9 @@
         _slides: Array<HTMLElement>;
         _current: number;
 
+        _socket: WebSocket;
+        _actionQueue: Array<ServerAction>;
+
         constructor() {
             let metadataScript = select('script[type="text/preleganto-metadata"]');
 
@@ -45,24 +55,36 @@
 
             this._slides = selectAll('.preleganto-slide');
 
-            this._attachEventHandlers();
-            this._setSlidesSize([window.innerWidth, window.innerHeight]);
+            this._actionQueue = [];
+            this._socket = new WebSocket(`ws://${window.location.host}`);
 
             if (/view-\d+/.test(window.location.hash)) {
-                this.goTo(Number(window.location.hash.match(/view-(\d+)/)[1]) - 1);
+                this.goTo(Number(window.location.hash.match(/view-(\d+)/)[1]) - 1, false);
             } else {
                 this._current = 0;
                 window.location.hash = 'view-1';
             }
+
+            this._attachEventHandlers();
+            this._setSlidesSize([window.innerWidth, window.innerHeight]);
         }
 
-        goTo(index: number): number {
+        goTo(index: number, notify: boolean = true): number {
             if (index >= this._slides.length) {
                 this._current = this._slides.length - 1;
             } else if (index < 0) {
                 this._current = 0;
             } else {
                 this._current = index;
+            }
+
+            if (notify) {
+                const action = { name: 'goTo', index };
+                if (this._socket.readyState === WebSocket.OPEN) {
+                    this._send(action);
+                } else {
+                    this._actionQueue.push(action);
+                }
             }
 
             window.scrollTo(0, this._slides[this._current].offsetTop);
@@ -97,11 +119,15 @@
             ];
         }
 
+        _send(action: ServerAction) {
+            this._socket.send(JSON.stringify(action));
+        }
+
         _attachEventHandlers() {
             // resize slides when window changed its size
             window.addEventListener('resize', ev => {
                 this._setSlidesSize([ev.target.innerWidth, ev.target.innerHeight]);
-                this.goTo(this._current);
+                this.goTo(this._current, false);
             });
 
             // disable control keys
@@ -126,6 +152,23 @@
                         break;
                 }
             });
+
+            this._socket.onopen = () => {
+                this._send({ name: 'sync' });
+                this._actionQueue.forEach(action => this._send(action));
+            };
+
+            this._socket.onmessage = event => {
+                const action: ServerAction = JSON.parse(String(event.data));
+                switch (action.name) {
+                    case 'goTo':
+                        this.goTo(action.index, false);
+                        break;
+                    case 'sync':
+                        this._send({ name: 'goTo', index: this._current });
+                        break;
+                }
+            };
         }
 
         _setSlidesSize(dimensions: [number, number]) {
