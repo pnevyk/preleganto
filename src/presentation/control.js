@@ -40,7 +40,7 @@
         _slides: Array<HTMLElement>;
         _current: number;
 
-        _socket: WebSocket;
+        _socket: WebSocket | null;
         _actionQueue: Array<ServerAction>;
 
         constructor() {
@@ -58,7 +58,13 @@
             this._slides = selectAll('.preleganto-slide');
 
             this._actionQueue = [];
-            this._socket = new WebSocket(`ws://${window.location.host}`);
+            if (window.location.host === '') {
+                // presentation is served from filesystem
+                this._socket = null;
+            } else {
+                // presentation is served from a server
+                this._socket = new WebSocket(`ws://${window.location.host}`);
+            }
 
             if (/view-\d+/.test(window.location.hash)) {
                 this.goTo(Number(window.location.hash.match(/view-(\d+)/)[1]) - 1, false);
@@ -80,7 +86,7 @@
                 this._current = index;
             }
 
-            if (notify) {
+            if (notify && this._socket !== null) {
                 const action = { name: 'goTo', index };
                 if (this._socket.readyState === WebSocket.OPEN) {
                     this._send(action);
@@ -122,7 +128,9 @@
         }
 
         _send(action: ServerAction) {
-            this._socket.send(JSON.stringify(action));
+            if (this._socket !== null) {
+                this._socket.send(JSON.stringify(action));
+            }
         }
 
         _attachEventHandlers() {
@@ -155,26 +163,28 @@
                 }
             });
 
-            this._socket.onopen = () => {
-                this._send({ name: 'sync' });
-                this._actionQueue.forEach(action => this._send(action));
-            };
+            if (this._socket !== null) {
+                this._socket.onopen = () => {
+                    this._send({ name: 'sync' });
+                    this._actionQueue.forEach(action => this._send(action));
+                };
 
-            this._socket.onmessage = event => {
-                const action: ServerAction = JSON.parse(String(event.data));
-                switch (action.name) {
-                    case 'goTo':
-                        this.goTo(action.index, false);
-                        break;
-                    case 'sync':
-                        this._send({ name: 'goTo', index: this._current });
-                        break;
-                    case 'reload':
-                        // force browser to reload presentation from server
-                        window.location.reload(true);
-                        break;
-                }
-            };
+                this._socket.onmessage = event => {
+                    const action: ServerAction = JSON.parse(String(event.data));
+                    switch (action.name) {
+                        case 'goTo':
+                            this.goTo(action.index, false);
+                            break;
+                        case 'sync':
+                            this._send({ name: 'goTo', index: this._current });
+                            break;
+                        case 'reload':
+                            // force browser to reload presentation from server
+                            window.location.reload(true);
+                            break;
+                    }
+                };
+            }
         }
 
         _setSlidesSize(dimensions: [number, number]) {
