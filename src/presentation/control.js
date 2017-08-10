@@ -1,80 +1,102 @@
 // @flow
 
+type Metadata = {
+    ratio: string,
+    title?: string,
+    author?: string,
+    theme?: string,
+};
+
+type InputEvent = 'previous' | 'next';
+
+type ServerAction = {
+    name: 'goTo',
+    index: number,
+} | {
+    name: 'sync'
+} | {
+    name: 'reload'
+};
+
 (function () {
-    type ServerAction = {
-        name: 'goTo',
-        index: number,
-    } | {
-        name: 'sync'
-    } | {
-        name: 'reload'
+    const utils = {
+        select(selector: string): ?HTMLElement {
+            return document.querySelector(selector);
+        },
+        selectAll(selector: string): Array<HTMLElement> {
+            return Array.from(document.querySelectorAll(selector));
+        }
     };
 
-    function select(selector: string): ?HTMLElement {
-        return document.querySelector(selector);
-    }
+    class Input {
+        _handlers: Array<{ event: InputEvent, listener: () => mixed }>;
 
-    function selectAll(selector: string): Array<HTMLElement> {
-        return Array.from(document.querySelectorAll(selector));
-    }
+        constructor() {
+            this._handlers = [];
 
-    const LEFT = 37;
-    const UP = 38;
-    const RIGHT = 39;
-    const DOWN = 40;
-    const SPACE = 32;
-    const ENTER = 13;
+            // disable control keys
+            window.addEventListener('keypress', ev => {
+                if (this._mapKeyboardEvent(ev) !== null) {
+                    ev.preventDefault();
+                }
+            });
 
-    const CONTROL_KEYS = [LEFT, UP, RIGHT, DOWN, SPACE, ENTER];
+            // attach control keys' handlers
+            // use keyup so it should get rid of accidental multiple slides moves
+            window.addEventListener('keyup', ev => {
+                const inputEvent = this._mapKeyboardEvent(ev);
 
-    function mapKey(e) {
-        if (e.keyCode === 0) {
-            return e.charCode;
-        } else {
-            return e.keyCode;
+                if (inputEvent !== null) {
+                    this._emit(inputEvent);
+                }
+            });
+        }
+
+        on(event: InputEvent, listener: () => mixed): Input {
+            this._handlers.push({ event, listener });
+            return this;
+        }
+
+        _emit(event: InputEvent) {
+            this._handlers.forEach(handler => {
+                if (handler.event === event) {
+                    handler.listener();
+                }
+            });
+        }
+
+        _mapKeyboardEvent(ev: KeyboardEvent): InputEvent | null {
+            switch (ev.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    return 'previous';
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case ' ':
+                case 'Enter':
+                    return 'next';
+                default:
+                    return null;
+            }
         }
     }
 
     class Preleganto {
-        _metadata: { [key: string]: string };
+        _metadata: Metadata;
+
         _slides: Array<HTMLElement>;
         _current: number;
+
+        _input: Input;
 
         _socket: WebSocket | null;
         _actionQueue: Array<ServerAction>;
 
         constructor() {
-            let metadataScript = select('script[type="text/preleganto-metadata"]');
-
-            if (metadataScript) {
-                this._metadata = JSON.parse(metadataScript.textContent);
-            } else {
-                console.warn('Cannot find Preleganto metadata. The presentation will run in limited mode.');
-                this._metadata = {
-                    ratio: '16:10'
-                };
-            }
-
-            this._slides = selectAll('.preleganto-slide');
-
-            this._actionQueue = [];
-            if (window.location.host === '') {
-                // presentation is served from filesystem
-                this._socket = null;
-            } else {
-                // presentation is served from a server
-                this._socket = new WebSocket(`ws://${window.location.host}`);
-            }
-
-            if (/view-\d+/.test(window.location.hash)) {
-                this.goTo(Number(window.location.hash.match(/view-(\d+)/)[1]) - 1, false);
-            } else {
-                this._current = 0;
-                window.location.hash = 'view-1';
-            }
-
-            this._attachEventHandlers();
-            this._setSlidesSize([window.innerWidth, window.innerHeight]);
+            this._initMetadata();
+            this._initSlides();
+            this._initInput();
+            this._initSocket();
         }
 
         goTo(index: number, notify: boolean = true): number {
@@ -89,7 +111,7 @@
             if (notify && this._socket !== null) {
                 const action = { name: 'goTo', index };
                 if (this._socket.readyState === WebSocket.OPEN) {
-                    this._send(action);
+                    this._sendServerEvent(action);
                 } else {
                     this._actionQueue.push(action);
                 }
@@ -116,7 +138,7 @@
             return this._slides.length;
         }
 
-        getMetadata(): { [key: string]: string } {
+        getMetadata(): Metadata {
             return this._metadata;
         }
 
@@ -127,46 +149,57 @@
             ];
         }
 
-        _send(action: ServerAction) {
-            if (this._socket !== null) {
-                this._socket.send(JSON.stringify(action));
+        _initMetadata() {
+            let metadataScript = utils.select('script[type="text/preleganto-metadata"]');
+
+            if (metadataScript) {
+                this._metadata = JSON.parse(metadataScript.textContent);
+            } else {
+                console.warn('Cannot find Preleganto metadata. The presentation will run in limited mode.');
+                this._metadata = {
+                    ratio: '16:10'
+                };
             }
         }
 
-        _attachEventHandlers() {
+        _initSlides() {
+            this._slides = utils.selectAll('.preleganto-slide');
+
+            if (/view-\d+/.test(window.location.hash)) {
+                this.goTo(Number(window.location.hash.match(/view-(\d+)/)[1]) - 1, false);
+            } else {
+                this._current = 0;
+                window.location.hash = 'view-1';
+            }
+
             // resize slides when window changed its size
             window.addEventListener('resize', ev => {
                 this._setSlidesSize([ev.target.innerWidth, ev.target.innerHeight]);
                 this.goTo(this._current, false);
             });
 
-            // disable control keys
-            window.addEventListener('keypress', ev => {
-                if (CONTROL_KEYS.indexOf(mapKey(ev)) !== -1) {
-                    ev.preventDefault();
-                }
-            });
+            this._setSlidesSize([window.innerWidth, window.innerHeight]);
+        }
 
-            // attach control keys' handlers
-            window.addEventListener('keyup', ev => {
-                switch (mapKey(ev)) {
-                    case LEFT:
-                    case UP:
-                        this.previous();
-                        break;
-                    case RIGHT:
-                    case DOWN:
-                    case SPACE:
-                    case ENTER:
-                        this.next();
-                        break;
-                }
-            });
+        _initInput() {
+            this._input = new Input();
 
-            if (this._socket !== null) {
+            this._input.on('previous', () => this.previous());
+            this._input.on('next', () => this.next());
+        }
+
+        _initSocket() {
+            this._actionQueue = [];
+            if (window.location.host === '') {
+                // presentation is served from filesystem
+                this._socket = null;
+            } else {
+                // presentation is served from a server
+                this._socket = new WebSocket(`ws://${window.location.host}`);
+
                 this._socket.onopen = () => {
-                    this._send({ name: 'sync' });
-                    this._actionQueue.forEach(action => this._send(action));
+                    this._sendServerEvent({ name: 'sync' });
+                    this._actionQueue.forEach(action => this._sendServerEvent(action));
                 };
 
                 this._socket.onmessage = event => {
@@ -176,7 +209,7 @@
                             this.goTo(action.index, false);
                             break;
                         case 'sync':
-                            this._send({ name: 'goTo', index: this._current });
+                            this._sendServerEvent({ name: 'goTo', index: this._current });
                             break;
                         case 'reload':
                             // force browser to reload presentation from server
@@ -196,6 +229,12 @@
                 node.style.width = `${width}px`;
                 node.style.height = `${height}px`;
             });
+        }
+
+        _sendServerEvent(action: ServerAction) {
+            if (this._socket !== null) {
+                this._socket.send(JSON.stringify(action));
+            }
         }
     }
 
