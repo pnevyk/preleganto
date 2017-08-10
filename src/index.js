@@ -72,7 +72,7 @@ function build(input: string, output: string, options: { rootpath: string }) {
 }
 
 function watch(input: string, output: string, options: { rootpath: string }, callback: () => void = () => {}) {
-    log(`I will watch '${input}' for changes`);
+    log(`I am watching '${input}' for changes`);
     newline();
 
     let lastTime = moment();
@@ -89,7 +89,7 @@ function watch(input: string, output: string, options: { rootpath: string }, cal
 
                 log(`(${time}) '${input}' was changed so I will try to build it again`);
                 build(input, output, options);
-                log('I was successfull');
+                log('And I was successfull');
                 callback();
             }
         }
@@ -121,7 +121,7 @@ yargs
             rootpath: path.join(process.cwd(), path.dirname(argv.input))
         };
 
-        const tempfile = path.join(options.rootpath, path.basename(argv.input, path.extname(argv.input)));
+        const tempfile = path.join(options.rootpath, path.basename(argv.input, path.extname(argv.input))) + '.tmp';
 
         logo();
         newline();
@@ -144,7 +144,10 @@ yargs
 
         process.on('exit', code => {
             fs.unlinkSync(tempfile);
-            log('Good job! I am shutting down the server now');
+
+            if (code === 0) {
+                log('Good job! I am shutting down the server now');
+            }
         });
 
         process.on('SIGINT', () => {
