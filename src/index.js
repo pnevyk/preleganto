@@ -43,6 +43,11 @@ const options = {
         port: {
             alias: 'p',
             default: 8080
+        },
+        watch: {
+            alias: 'w',
+            default: false,
+            description: 'Watch the source file, rebuild presentation on change and reload all connected clients'
         }
     }
 };
@@ -66,6 +71,31 @@ function build(input: string, output: string, options: { rootpath: string }) {
     }
 }
 
+function watch(input: string, output: string, options: { rootpath: string }, callback: () => void = () => {}) {
+    log(`I will watch '${input}' for changes`);
+    newline();
+
+    let lastTime = moment();
+    fs.watch(input, eventType => {
+        if (eventType === 'rename') {
+            log(`'${input}' was renamed or deleted wo I will stop watch it`);
+            process.exit();
+        } else if (eventType === 'change') {
+            let time = moment().format('H:mm:ss');
+
+            // listener is triggered twice (empty file, write content)
+            if (time !== lastTime) {
+                lastTime = time;
+
+                log(`(${time}) '${input}' was changed so I will try to build it again`);
+                build(input, output, options);
+                log('I was successfull');
+                callback();
+            }
+        }
+    });
+}
+
 yargs
     .version()
     .command('build', commands.build, options.build, argv => {
@@ -83,27 +113,7 @@ yargs
         newline();
 
         if (argv.watch) {
-            log(`I will watch '${argv.input}' for changes`);
-            newline();
-
-            let lastTime = moment();
-            fs.watch(argv.input, eventType => {
-                if (eventType === 'rename') {
-                    log(`'${argv.input}' was renamed or deleted wo I will stop watch it`);
-                    process.exit();
-                } else if (eventType === 'change') {
-                    let time = moment().format('H:mm:ss');
-
-                    // listener is triggered twice (empty file, write content)
-                    if (time !== lastTime) {
-                        lastTime = time;
-
-                        log(`(${time}) '${argv.input}' was changed so I will try to build it again`);
-                        build(argv.input, argv.output, options);
-                        log(`I managed to build '${argv.input}' so I created '${argv.output}'`);
-                    }
-                }
-            });
+            watch(argv.input, argv.output, options);
         }
     })
     .command('serve', commands.serve, options.serve, argv => {
@@ -128,7 +138,11 @@ yargs
 
         server.run(tempfile);
 
-        process.on('exit', () => {
+        if (argv.watch) {
+            watch(argv.input, tempfile, options, () => server.reloadClients());
+        }
+
+        process.on('exit', code => {
             fs.unlinkSync(tempfile);
             log('Good job! I am shutting down the server now');
         });

@@ -15,6 +15,8 @@ export type Options = {
 
 export default class Server {
     _options: Options;
+    _server: http.Server;
+    _wss: ws.Server;
 
     constructor(options: Options) {
         this._options = options;
@@ -28,13 +30,13 @@ export default class Server {
             res.send(fs.readFileSync(filepath).toString());
         });
 
-        const server = http.createServer(app);
-        const wss = new ws.Server({ server });
+        this._server = http.createServer(app);
+        this._wss = new ws.Server({ server: this._server });
 
-        wss.on('connection', socket => {
+        this._wss.on('connection', socket => {
             log('Someone has connected');
             socket.on('message', (action: string) => {
-                wss.clients.forEach(client => {
+                this._wss.clients.forEach(client => {
                     if (client !== socket && client.readyState === ws.OPEN) {
                         client.send(action);
                     }
@@ -42,12 +44,23 @@ export default class Server {
             });
         });
 
-        server.listen(this._options.port);
-        server.on('listening', () => {
+        this._server.listen(this._options.port);
+        this._server.on('listening', () => {
             // use server.address().port because when port given by user is invalid, server can assign different port
-            const address = chalk.magenta(`http://localhost:${server.address().port}`);
-            log(`Local server running at ${address}`);
+            const address = chalk.magenta(`http://localhost:${this._server.address().port}`);
+            log(`Local server is running at ${address}`);
             newline();
+        });
+    }
+
+    reloadClients() {
+        const action = JSON.stringify({ name: 'reload' });
+
+        log('I am asking all connected clients to reload');
+        this._wss.clients.forEach(client => {
+            if (client.readyState === ws.OPEN) {
+                client.send(action);
+            }
         });
     }
 }

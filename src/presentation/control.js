@@ -6,6 +6,8 @@
         index: number,
     } | {
         name: 'sync'
+    } | {
+        name: 'reload'
     };
 
     function select(selector: string): ?HTMLElement {
@@ -166,6 +168,10 @@
                         break;
                     case 'sync':
                         this._send({ name: 'goTo', index: this._current });
+                        break;
+                    case 'reload':
+                        // force browser to reload presentation from server
+                        window.location.reload(true);
                         break;
                 }
             };
