@@ -54,10 +54,12 @@
     "dependencies": {
         "chalk": "^2.0.1",
         "ejs": "^2.5.7",
+        "express": "^4.15.3",
         "katex": "^0.7.1",
         "moment": "^2.18.1",
         "prismjs": "^1.6.0",
         "tipograph": "^0.3.5",
+        "ws": "^3.1.0",
         "yargs": "^8.0.2"
     },
     "ava": {
