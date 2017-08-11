@@ -1,0 +1,55 @@
+:title: All Features
+:author: Petr Nevyhoštěný
+:ratio: 4:3
+
+'''
+
+= Top Heading
+
+== Sub Heading
+
+'''
+
+= Formatting
+
+*Bold*, _italic_ and `monospace`. Also with inner-word variant such as b**ol**d,
+i__tali__c and m``onospac``e. link:https://github.com/pnevyk/preleganto[Link]
+support. Automatic typographic correction (e.g., "quotes", symbols such as (tm), ...).
+
+'''
+
+= Unordered List
+
+* Item 1
+* Item 2
+** Sublist
+* Item 3
+
+'''
+
+= Ordered List
+
+. Item 1
+. Item 2
+.. Sublist
+. Item 3
+
+'''
+
+= Source code
+
+[source, javascript]
+----
+function greet() {
+    return 'Hello world!';
+}
+----
+
+'''
+
+= Mathematics
+
+[math]
+----
+e^{i\pi} + 1 = 0
+----
