@@ -21,13 +21,20 @@ to create a beautiful presentation.
 
 1. `npm install -g preleganto`
 2. Write some markup into a file (see [examples](examples/) for inspiration)
-3. `preleganto build --input presentation.adoc`
+3. `preleganto build --input examples/preleganto.adoc`
 
 ## Note
 
 Preleganto is in early stages of development. Many features are missing, no
 tests are written, a lot of refactoring is needed and documentation is lacking.
 But I hope it will get better over time.
+
+### Browser support
+
+I don't aim to support every browser out there. I want to use new features
+present in web development today. Preleganto has to work in my browser and if
+anybody has issues running it in his browser, then he can make a pull request to
+fix it.
 
 ## Contributing
 
@@ -40,8 +47,21 @@ git clone git@github.com:pnevyk/preleganto.git
 cd preleganto
 npm install
 npm run build
-node index.js build --input presentation.adoc
+node index.js build --input examples/preleganto.adoc
 ```
+
+Development of Preleganto tries to follow rules of [git
+flow](http://nvie.com/posts/a-successful-git-branching-model/) approach (more or
+less). That means that you should
+
+* make a new branch named `feature/<topic>` branched from `develop` for every
+  new feature or enhancement
+* make a new branch named `bugfix/<topic>` branched from `develop` for a
+  non-critical bugfix
+* make a new branch named `hotfix/<topic>` branched from `master` for a
+  critical bugfix
+
+Don't be scared, everyone makes mistakes and I am a really great example.
 
 ## Roadmap
 
