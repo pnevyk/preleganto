@@ -42,7 +42,7 @@ pre, code {
 }
 
 ul, ol {
-    padding-left: 4vw;
+    padding-left: 6vh;
     list-style: none;
 }
 
@@ -79,8 +79,8 @@ ul > li:before {
     content: "\27a4";
     color: #6d4d47;
     font-size: 4.2vh;
-    margin-right: 2vw;
-    margin-left: -4vw;
+    margin-right: 2.1vh;
+    margin-left: -5.7vh;
     position: relative;
     top: -0.4vh;
 }
@@ -89,16 +89,17 @@ ol > li:before {
     background-color: #6d4d47;
     color: #f0ece3;
     font-weight: bold;
-    margin-right: 1.75vw;
-    margin-left: -3.75vw;
+    margin-right: 2vh;
+    margin-left: -5.35vh;
     font-family: 'Ubuntu Mono', monospace;
     font-size: 2.5vh;
     position: relative;
     top: -0.9vh;
-    padding-left: 0.7vh;
-    padding-right: 0.7vh;
-    border: 3px solid #6d4d47;
-    border-radius: 2.5vh;
+    padding-left: 1vh;
+    padding-right: 1vh;
+    padding-top: 0.3vh;
+    padding-bottom: 0.4vh;
+    border-radius: 100%;
 }
 
 a {
