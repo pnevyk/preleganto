@@ -68,7 +68,7 @@ export default class Compiler {
             template.addSlide(theme.renderOpening(metadata));
             tree.slides.forEach(slide => {
                 template.addSlide(theme.renderContent({
-                    content: slide.value.map(element => compile(element)).join('\n')
+                    content: slide.value.map(element => compile(element, this._rootpath)).join('\n')
                 }));
             });
             template.addSlide(theme.renderClosing(metadata));
@@ -113,28 +113,30 @@ function typography(text: string): string {
     return tipograph.Replace.all(text);
 }
 
-function compile(node: Node): string {
+function compile(node: Node, rootpath: string): string {
     switch (node.name) {
         case 'Heading':
-            return `<h${node.level}>${typography(node.value.map(compile).join(''))}</h${node.level}>`;
+            return `<h${node.level}>${
+                typography(node.value.map(node => compile(node, rootpath)).join(''))
+            }</h${node.level}>`;
         case 'Paragraph':
-            return `<p>${typography(node.value.map(compile).join(''))}</p>`;
+            return `<p>${typography(node.value.map(node => compile(node, rootpath)).join(''))}</p>`;
         case 'ListItem':
-            return `<li>${typography(node.value.map(compile).join(''))}</li>`;
+            return `<li>${typography(node.value.map(node => compile(node, rootpath)).join(''))}</li>`;
         case 'OrderedList':
-            return `<ol>${node.value.map(compile).join('')}</ol>`;
+            return `<ol>${node.value.map(node => compile(node, rootpath)).join('')}</ol>`;
         case 'UnorderedList':
-            return `<ul>${node.value.map(compile).join('')}</ul>`;
+            return `<ul>${node.value.map(node => compile(node, rootpath)).join('')}</ul>`;
         case 'Text':
             return node.value;
         case 'TextStrong':
-            return `<strong>${node.value.map(compile).join('')}</strong>`;
+            return `<strong>${node.value.map(node => compile(node, rootpath)).join('')}</strong>`;
         case 'TextEmph':
-            return `<em>${node.value.map(compile).join('')}</em>`;
+            return `<em>${node.value.map(node => compile(node, rootpath)).join('')}</em>`;
         case 'TextMono':
-            return `<code>${compile(node.value)}</code>`;
+            return `<code>${compile(node.value, rootpath)}</code>`;
         case 'TextMacro':
-            return typography(applyMacro(node));
+            return typography(applyMacro(node, rootpath));
         case 'SpecialBlock':
             return applyBlock(node);
         default:
