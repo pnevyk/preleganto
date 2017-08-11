@@ -7,7 +7,7 @@ type Metadata = {
     theme?: string,
 };
 
-type InputEvent = 'previous' | 'next';
+type InputEvent = 'previous' | 'next' | 'ratio';
 
 type ServerAction = {
     name: 'goTo',
@@ -75,6 +75,9 @@ type ServerAction = {
                 case ' ':
                 case 'Enter':
                     return 'next';
+                case 'r':
+                case 'R':
+                    return 'ratio';
                 default:
                     return null;
             }
@@ -91,6 +94,9 @@ type ServerAction = {
 
         _socket: WebSocket | null;
         _actionQueue: Array<ServerAction>;
+
+        _supportedRatios: Array<string>;
+        _currentRatio: string;
 
         constructor() {
             this._initMetadata();
@@ -130,6 +136,13 @@ type ServerAction = {
             return this.goTo(this._current + 1);
         }
 
+        switchRatio() {
+            let index = this._supportedRatios.indexOf(this._currentRatio);
+            index = (index + 1) % this._supportedRatios.length;
+            this._currentRatio = this._supportedRatios[index];
+            this._setSlidesSize([window.innerWidth, window.innerHeight]);
+        }
+
         getCurrent(): number {
             return this._current;
         }
@@ -144,8 +157,8 @@ type ServerAction = {
 
         parseRatio(): [number, number] {
             return [
-                Number(this._metadata.ratio.split(':')[0]),
-                Number(this._metadata.ratio.split(':')[1])
+                Number(this._currentRatio.split(':')[0]),
+                Number(this._currentRatio.split(':')[1])
             ];
         }
 
@@ -160,6 +173,14 @@ type ServerAction = {
                     ratio: '16:10'
                 };
             }
+
+            this._supportedRatios = ['16:10', '4:3', '16:9'];
+
+            if (this._supportedRatios.indexOf(this._metadata.ratio) === -1) {
+                this._supportedRatios.push(this._metadata.ratio);
+            }
+
+            this._currentRatio = this._metadata.ratio;
         }
 
         _initSlides() {
@@ -186,6 +207,7 @@ type ServerAction = {
 
             this._input.on('previous', () => this.previous());
             this._input.on('next', () => this.next());
+            this._input.on('ratio', () => this.switchRatio());
         }
 
         _initSocket() {
