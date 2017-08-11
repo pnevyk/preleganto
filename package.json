@@ -1,6 +1,6 @@
 {
     "name": "preleganto",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "Easy-to-use markup based HTML presentation tool with built-in source highlighting and math rendering",
     "main": "index.js",
     "scripts": {
