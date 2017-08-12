@@ -205,6 +205,25 @@ e^{i\pi} + 1 = 0
 ----
 ```
 
+### Command line
+
+#### Build
+
+`preleganto build` builds a source file into HTML output.
+
+* `-i`, `--input` - path to source file
+* `-o`, `--output` - path where output file will be located
+* `-w`, `--watch` - watches source file and rebuilds on change
+
+#### Serve
+
+`preleganto serve` builds a source file, starts local server and serves the
+presentation on that server.
+
+* `-i`, `--input` - path to source file
+* `-p`, `--port` - port on which local server is started
+* `-w`, `--watch` - watches source file and reloads the presentation in browser
+
 ## Contributing
 
 I'd love to see anyone who wants to help, be it a pull request or just a
