@@ -86,8 +86,10 @@ Slide B
 
 #### Slide notes
 
-All AsciiDoc comments are treated as slide notes (not implemented yet, see #5)
-and are displayed only in speaker mode (not implemented yet, see #4).
+All AsciiDoc comments are treated as slide notes (not implemented yet, see
+[#5](https://github.com/pnevyk/preleganto/issues/5)) and are displayed only in
+speaker mode (not implemented yet, see
+[#4](https://github.com/pnevyk/preleganto/issues/4)).
 
 ```
 Slide content
