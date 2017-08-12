@@ -36,6 +36,18 @@ present in web development today. Preleganto has to work in my browser and if
 anybody has issues running it in his browser, then he can make a pull request to
 fix it.
 
+### AsciiDoc compatibility
+
+Since there is no AsciiDoc parser written in JavaScript and emitting an AST
+available (to my knowledge), I had to write my own. It supports really small
+subset of AsciiDoc syntax and probably doesn't follow AsciiDoc specification in
+all possible edge cases. Surely there are also parsing errors where they
+shouldn't be.
+
+I hope that it will be replaced eventually by a parser from anyone who will want
+to focus on full AsciiDoc support maintaing compatibility with specification,
+because I am not that person.
+
 ## Contributing
 
 I'd love to see anyone who wants to help, be it a pull request or just a
@@ -61,11 +73,14 @@ less). That means that you should
 * make a new branch named `hotfix/<topic>` branched from `master` for a
   critical bugfix
 
-Don't be scared, everyone makes mistakes and I am a really great example.
+Don't be scared, everyone makes mistakes and I am a really great example. If you
+want to start with something easy, try these
+[issues](https://github.com/pnevyk/preleganto/labels/easy).
 
 ## Roadmap
 
-See [feature requests](https://github.com/pnevyk/preleganto/labels/feature-request).
+See [feature
+requests](https://github.com/pnevyk/preleganto/labels/feature-request).
 
 ## License
 
