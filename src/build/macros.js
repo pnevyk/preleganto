@@ -39,7 +39,7 @@ function link(macro: NodeTextMacro, rootpath: string): string {
         url = path.join(rootpath, url);
     }
 
-    return `<a href="${url}">${title}</a>`;
+    return `<a href="${url}" target="_blank">${title}</a>`;
 }
 
 function image(macro: NodeTextMacro, rootpath: string): string {
