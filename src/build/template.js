@@ -1,9 +1,11 @@
 // @flow
 
+export type Asset = { content: string, options: { [key: string]: string | boolean } };
+
 export default class Template {
     _title: string;
-    _css: Array<{ external: boolean, content: string }>;
-    _js: Array<{ external: boolean, content: string, options: { [key: string]: string | boolean } }>;
+    _css: Array<Asset>;
+    _js: Array<Asset>;
     _slides: Array<string>;
     _metadata: { [key: string]: string };
 
@@ -25,13 +27,13 @@ export default class Template {
         return this;
     }
 
-    addCss(external: boolean, content: string): Template {
-        this._css.push({ external, content });
+    addCss(content: string, options: { [key: string]: string | boolean } = {}): Template {
+        this._css.push({ content, options });
         return this;
     }
 
-    addJs(external: boolean, content: string, options: { [key: string]: string | boolean } = {}): Template {
-        this._js.push({ external, content, options });
+    addJs(content: string, options: { [key: string]: string | boolean } = {}): Template {
+        this._js.push({ content, options });
         return this;
     }
 
@@ -46,48 +48,31 @@ export default class Template {
                 <head>
                     <meta charset="utf-8">
                     <title>${this._title}</title>
-                    ${this._css.map(this._compileCss).join('\n')}
+                    ${this._css.map(this._compileCss, this).join('\n')}
                 </head>
                 <body>
                     <main class="preleganto-presentation">
-                        ${this._slides.map(this._compileSlide).join('\n')}
+                        ${this._slides.map(this._compileSlide, this).join('\n')}
                     </main>
                     <script type="text/preleganto-metadata">
                         ${this._compileMetadata()}
                     </script>
-                    ${this._js.map(this._compileJs).join('\n')}
+                    ${this._js.map(this._compileJs, this).join('\n')}
                 </body>
             </html>
         `;
     }
 
-    _compileCss(css: { external: boolean, content: string }): string {
-        if (css.external) {
-            return `<link rel="stylesheet" href="${css.content}" />`;
-        } else {
-            return `<style type="text/css">
-                ${css.content}
-            </style>`;
-        }
+    _compileCss(css: { content: string, options: { [key: string ]: string | boolean } }): string {
+        return `<style type="text/css" ${this._compileExtras(css.options)}>
+            ${css.content}
+        </style>`;
     }
 
-    _compileJs(js: { external: boolean, content: string, options: { [key: string ]: string | boolean } }): string {
-        let extras = Object.keys(js.options).map(key => {
-            const value = js.options[key];
-            if (typeof value === 'string') {
-                return ` ${key}="${value}"`;
-            } else if (value === true) {
-                return ` ${key}`;
-            }
-        }).join('');
-
-        if (js.external) {
-            return `<script type="text/javascript" src="${js.content}" ${extras}></script>`;
-        } else {
-            return `<script type="text/javascript">
-                ${js.content}
-            </script>`;
-        }
+    _compileJs(js: { content: string, options: { [key: string ]: string | boolean } }): string {
+        return `<script type="text/javascript" ${this._compileExtras(js.options)}>
+            ${js.content}
+        </script>`;
     }
 
     _compileSlide(slide: string, index: number): string {
@@ -98,5 +83,17 @@ export default class Template {
 
     _compileMetadata(): string {
         return JSON.stringify(this._metadata);
+    }
+
+    _compileExtras(extras: { [key: string]: string | boolean}): string {
+        return Object.keys(extras).map(key => {
+            const value = extras[key];
+            if (typeof value === 'string') {
+                return ` ${key}="${value}"`;
+            } else if (value === true) {
+                return ` ${key}`;
+            }
+        }).join('');
+
     }
 }

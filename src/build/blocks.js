@@ -7,7 +7,7 @@ import katex from 'katex';
 
 import { warn } from '../logger';
 
-export default function (block: NodeSpecialBlock): string {
+export default async function (block: NodeSpecialBlock): Promise<string> {
     switch (block.block) {
         case 'source':
             return source(block);

@@ -59,7 +59,7 @@ export default class Theme {
         }
     }
 
-    renderStyle(): string {
+    async renderStyle(): Promise<string> {
         return this._style;
     }
 
