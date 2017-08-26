@@ -4,8 +4,6 @@
 
 body {
     background-color: #91a19b;
-    font-size: 5vh;
-    color: #362623;
     font-family: 'PT Sans', sans-serif;
 }
 
@@ -14,27 +12,8 @@ body {
     box-shadow: 0 0 10px 3px rgba(0, 0, 0, 1);
 }
 
-.preleganto-slide > section {
-    padding: 7vh 7vw 7vh 7vw;
-}
-
 header, footer {
     color: #6d4d47;
-}
-
-h1 {
-    margin-top: 1vh;
-    font-size: 8vh;
-}
-
-h2 {
-    margin-top: 1vh;
-    font-size: 6vh;
-}
-
-h3 {
-    margin-top: 1vh;
-    font-size: 5vh;
 }
 
 pre, code {
@@ -107,6 +86,12 @@ a {
     color: #a01d22;
 }
 
+img {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* === OPENING === */
 
 .opening {
@@ -151,8 +136,6 @@ a {
 }
 
 .preleganto-display-math {
-    overflow: visible;
-    display: table; /* inline-block does not work, don't know why */
     position: relative;
     margin-left: auto;
     margin-right: auto;
@@ -175,8 +158,4 @@ code {
     background-color: #362623;
     padding: 2vh;
     border-radius: 1vh;
-}
-
-.katex {
-    white-space: normal;
 }
