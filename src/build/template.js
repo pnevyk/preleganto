@@ -58,6 +58,7 @@ export default class Template {
             <html>
                 <head>
                     <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
                     <title>${this._title}</title>
                     ${await map(this._css, this._compileCss.bind(this)).then(styles => styles.join('\n'))}
                 </head>
