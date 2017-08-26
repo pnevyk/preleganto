@@ -1,7 +1,7 @@
 // @flow
 
 import type { Config, BuildOptions } from '../config';
-import type { Node, NodeMetadata } from '../syntax/parse';
+import type { Node, NodeMetadata, NodeSlide } from '../syntax/parse';
 
 import path from 'path';
 
@@ -75,16 +75,19 @@ export default class Compiler {
             template.setMetadata(metadata);
 
             // content
-            template.addSlide(theme.renderOpening(metadata));
+            template.addSlide(theme.renderOpening({ ...metadata }));
 
-            for (let slide of tree.slides) {
-                const content = await map(slide.value, element => compile(element, this._options.rootpath));
+            const slidesInfo = getSlidesInfo(tree.slides);
+
+            for (let i = 0; i < tree.slides.length; i++) {
+                const content = await map(tree.slides[i].value, element => compile(element, this._options.rootpath));
                 template.addSlide(theme.renderContent({
-                    content: content.join('\n')
+                    content: content.join('\n'),
+                    ...slidesInfo[i],
                 }));
             }
 
-            template.addSlide(theme.renderClosing(metadata));
+            template.addSlide(theme.renderClosing({ ...metadata }));
 
 
             return template.toHtml();
@@ -100,6 +103,74 @@ function getMetadata(metadata: Array<NodeMetadata>): { [key: string]: string } {
         metadata[key] = item.value;
         return metadata;
     }, {});
+}
+
+type SlideInfo = {
+    currentSlide: number,
+    slidesTotal: number,
+    currentView: number,
+    viewsTotal: number,
+    viewsCountInSlide: number,
+    currentViewInSlide: number,
+};
+
+function getSlidesInfo(slides: Array<NodeSlide>): Array<SlideInfo> {
+    if (slides.length === 0) {
+        return [];
+    }
+
+    let slidesTotal = 0;
+    let viewsTotal = 0;
+
+    let slidesInfo: Array<SlideInfo> = [];
+
+    for (let slide of slides) {
+        let metadata = getMetadata(slide.metadata);
+        if (metadata.previousSlideNumber !== '') {
+            slidesTotal++;
+        }
+
+        viewsTotal++;
+
+        slidesInfo.push({
+            currentSlide: slidesTotal,
+            slidesTotal: 0,
+            currentView: viewsTotal,
+            viewsTotal: 0,
+            currentViewInSlide: 0,
+            viewsCountInSlide: 0,
+        });
+    }
+
+    for (let i = 0; i < slidesInfo.length;) {
+        let currentSlide = slidesInfo[i].currentSlide;
+        let startView = slidesInfo[i].currentView;
+
+        let nextSlide;
+        for (nextSlide = i + 1; nextSlide < slidesInfo.length; nextSlide++) {
+            if (slidesInfo[nextSlide].currentSlide !== currentSlide) {
+                break;
+            }
+        }
+
+        let viewsCountInSlide;
+        if (nextSlide !== slidesInfo.length) {
+            viewsCountInSlide = slidesInfo[nextSlide].currentView - startView;
+        } else {
+            viewsCountInSlide = viewsTotal - startView + 1;
+        }
+
+        for (let j = i; j < nextSlide; j++) {
+            slidesInfo[j].slidesTotal = slidesTotal;
+            slidesInfo[j].viewsTotal = viewsTotal;
+            slidesInfo[j].currentViewInSlide = j - i + 1;
+            slidesInfo[j].viewsCountInSlide = viewsCountInSlide;
+        }
+
+        i = nextSlide;
+    }
+
+    return slidesInfo;
 }
 
 function typography(text: string): string {

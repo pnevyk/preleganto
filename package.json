@@ -46,6 +46,7 @@
         "ava": "^0.21.0",
         "babel-cli": "^6.24.1",
         "babel-eslint": "^7.2.3",
+        "babel-plugin-transform-object-rest-spread": "^6.26.0",
         "babel-preset-es2015": "^6.24.1",
         "babel-preset-flow": "^6.23.0",
         "babel-register": "^6.24.1",
@@ -64,6 +65,9 @@
         "tipograph": "^0.3.5",
         "ws": "^3.1.0",
         "yargs": "^8.0.2"
+    },
+    "engines": {
+        "node": ">=8.0.0"
     },
     "ava": {
         "files": [

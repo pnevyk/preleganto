@@ -9,7 +9,7 @@ import ejs from 'ejs';
 
 import { warn, error } from '../logger';
 
-export type Renderer = ({ data: { [key: string]: string }}) => string;
+export type Renderer = ({ data: { [key: string]: mixed }}) => string;
 type Template = 'content.html' | 'opening.html' | 'closing.html';
 
 const DEFAULT_THEME_DIR = path.join(__dirname, '..', '..', 'themes', 'default');
@@ -44,7 +44,7 @@ export default class Theme {
         this._closing = ejs.compile(this._loadTemplate(themedir, 'closing.html'));
     }
 
-    renderContent(data: { [key: string]: string }): string {
+    renderContent(data: { [key: string]: mixed }): string {
         try {
             return this._content({ data });
         } catch (ex) {
@@ -53,7 +53,7 @@ export default class Theme {
         }
     }
 
-    renderOpening(data: { [key: string]: string }): string {
+    renderOpening(data: { [key: string]: mixed }): string {
         try {
             return this._opening({ data });
         } catch (ex) {
@@ -62,7 +62,7 @@ export default class Theme {
         }
     }
 
-    renderClosing(data: { [key: string]: string }): string {
+    renderClosing(data: { [key: string]: mixed }): string {
         try {
             return this._closing({ data });
         } catch (ex) {
