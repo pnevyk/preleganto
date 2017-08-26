@@ -7,7 +7,7 @@ type Metadata = {
     theme?: string,
 };
 
-type InputEvent = 'previous' | 'next' | 'ratio';
+type InputEvent = 'previous' | 'next' | 'ratio' | 'beginning' | 'end';
 
 type ServerAction = {
     name: 'goTo',
@@ -75,6 +75,10 @@ type ServerAction = {
                 case ' ':
                 case 'Enter':
                     return 'next';
+                case 'Home':
+                    return 'beginning';
+                case 'End':
+                    return 'end';
                 case 'r':
                 case 'R':
                     return 'ratio';
@@ -134,6 +138,14 @@ type ServerAction = {
 
         next(): number {
             return this.goTo(this._current + 1);
+        }
+
+        beginning(): number {
+            return this.goTo(0);
+        }
+
+        end(): number {
+            return this.goTo(this._slides.length - 1);
         }
 
         switchRatio() {
@@ -207,6 +219,8 @@ type ServerAction = {
 
             this._input.on('previous', () => this.previous());
             this._input.on('next', () => this.next());
+            this._input.on('beginning', () => this.beginning());
+            this._input.on('end', () => this.end());
             this._input.on('ratio', () => this.switchRatio());
         }
 
