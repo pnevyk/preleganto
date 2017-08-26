@@ -3,11 +3,11 @@
 import type { NodeTextMacro } from '../syntax/parse';
 
 import path from 'path';
-import fs from 'fs';
 
 import katex from 'katex';
 
 import { warn } from '../logger';
+import { embedImage } from './embedding';
 
 export default async function (macro: NodeTextMacro, rootpath: string): Promise<string> {
     switch (macro.macro) {
@@ -42,7 +42,7 @@ function link(macro: NodeTextMacro, rootpath: string): string {
     return `<a href="${url}" target="_blank">${title}</a>`;
 }
 
-function image(macro: NodeTextMacro, rootpath: string): string {
+function image(macro: NodeTextMacro, rootpath: string): Promise<string> {
     let alt = macro.value;
     let width = null;
     let height = null;
@@ -68,14 +68,7 @@ function image(macro: NodeTextMacro, rootpath: string): string {
         attributes += ` height="${height}"`;
     }
 
-    let source = macro.value;
-    if (isLocal(source)) {
-        let extension = path.extname(source).slice(1);
-        source = fs.readFileSync(path.join(rootpath, source)).toString('base64');
-        source = `data:image/${extension};base64,${source}`;
-    }
-
-    return `<img src="${source}" alt="${alt}"${attributes} />`;
+    return embedImage(`<img src="${macro.value}" alt="${alt}"${attributes} />`, rootpath);
 }
 
 function math(macro: NodeTextMacro): string {

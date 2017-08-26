@@ -12,7 +12,8 @@ import tipograph from 'tipograph';
 import parse from '../syntax/parse';
 import Template from './template';
 import Theme from './theme';
-import { read } from './files';
+import { readFile, embedFonts } from './embedding';
+import { map } from '../async';
 import applyMacro from './macros';
 import applyBlock from './blocks';
 import { error, warn, IMPLEMENTATION_ERROR_MESSAGE } from '../logger';
@@ -39,26 +40,37 @@ export default class Compiler {
             const template = new Template();
             const theme = new Theme(metadata.theme, this._rootpath);
 
-            template.addCss(await read('https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css'));
             template.addCss(
-                await read('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css')
+                await this._loadExternalCss('https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css')
             );
-            template.addCss(await read('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css'));
 
-            template.addJs(await read('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js'), {
-                'data-manual': true
-            });
+            template.addCss(
+                await this._loadExternalCss(
+                    'https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css'
+                )
+            );
+
+            template.addCss(
+                await this._loadExternalCss('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css')
+            );
+
+            template.addJs(
+                await this._loadExternalJs('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js'),
+                { 'data-manual': true }
+            );
 
             template.addCss(await this._loadRequiredAsset('layout.css'));
 
-            template.addCss(await theme.renderStyle());
+            template.addCss(await embedFonts(await theme.renderStyle(), theme.getThemedir()));
 
             template.addJs(await this._loadRequiredAsset('control.js'));
 
-            template.addJs(await read('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js'));
+            template.addJs(
+                await this._loadExternalJs('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js')
+            );
 
             if (metadata.customStyle) {
-                template.addCss(await this._loadCustomAsset(metadata.customStyle));
+                template.addCss(await embedFonts(await this._loadCustomAsset(metadata.customStyle), this._rootpath));
             }
 
             if (metadata.customScript) {
@@ -74,7 +86,7 @@ export default class Compiler {
             template.addSlide(theme.renderOpening(metadata));
 
             for (let slide of tree.slides) {
-                const content = await mapAsync(slide.value, element => compile(element, this._rootpath));
+                const content = await map(slide.value, element => compile(element, this._rootpath));
                 template.addSlide(theme.renderContent({
                     content: content.join('\n')
                 }));
@@ -91,7 +103,7 @@ export default class Compiler {
 
     async _loadRequiredAsset(asset: PresentationAsset): Promise<string> {
         try {
-            return await read(asset, path.join(__dirname, '..', 'presentation'));
+            return readFile(asset, path.join(__dirname, '..', 'presentation')).then(content => content.toString());
         } catch (ex) {
             warn(IMPLEMENTATION_ERROR_MESSAGE);
             return '';
@@ -101,16 +113,31 @@ export default class Compiler {
     async _loadCustomAsset(asset: string): Promise<string> {
         const filepath = path.join(this._rootpath, asset);
         try {
-            return await read(asset, this._rootpath);
+            return readFile(asset, this._rootpath).then(content => content.toString());
         } catch (ex) {
             error(`load error of ${filepath}: you specified non-existent custom file`);
             return '';
         }
     }
-}
 
-async function mapAsync<T, R>(values: Array<T>, callback: T => Promise<R>): Promise<Array<R>> {
-    return Promise.all(values.map(value => callback(value)));
+    async _loadExternalCss(url: string): Promise<string> {
+        try {
+            const rootpath = path.dirname(url);
+            return embedFonts(await readFile(url, rootpath).then(content => content.toString()), rootpath);
+        } catch (ex) {
+            error(`load error of ${url}: there may be a problem with your internet connection`);
+            return '';
+        }
+    }
+
+    async _loadExternalJs(url: string): Promise<string> {
+        try {
+            return readFile(url).then(content => content.toString());
+        } catch (ex) {
+            error(`load error of ${url}: there may be a problem with your internet connection`);
+            return '';
+        }
+    }
 }
 
 function getMetadata(metadata: Array<NodeMetadata>): { [key: string]: string } {
@@ -130,27 +157,27 @@ async function compile(node: Node, rootpath: string): Promise<string> {
 
     switch (node.name) {
         case 'Heading':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<h${node.level}>${typography(temp.join(''))}</h${node.level}>`;
         case 'Paragraph':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<p>${typography(temp.join(''))}</p>`;
         case 'ListItem':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<li>${typography(temp.join(''))}</li>`;
         case 'OrderedList':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<ol>${typography(temp.join(''))}</ol>`;
         case 'UnorderedList':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<ul>${typography(temp.join(''))}</ul>`;
         case 'Text':
             return node.value;
         case 'TextStrong':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<strong>${typography(temp.join(''))}</strong>`;
         case 'TextEmph':
-            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            temp = await map(node.value, node => compile(node, rootpath));
             return `<em>${typography(temp.join(''))}</em>`;
         case 'TextMono':
             temp = await compile(node.value, rootpath);

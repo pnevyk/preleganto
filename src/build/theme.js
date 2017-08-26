@@ -18,6 +18,8 @@ export default class Theme {
     _closing: Renderer;
     _style: string;
 
+    _themedir: string;
+
     constructor(identifier: string, rootpath: string) {
         let themedir;
         if (identifier[0] === '.') {
@@ -30,6 +32,8 @@ export default class Theme {
         this._opening = ejs.compile(this._loadFile(themedir, 'opening.html'));
         this._closing = ejs.compile(this._loadFile(themedir, 'closing.html'));
         this._style = this._loadFile(themedir, 'style.css');
+
+        this._themedir = themedir;
     }
 
     renderContent(data: { [key: string]: string }): string {
@@ -61,6 +65,10 @@ export default class Theme {
 
     async renderStyle(): Promise<string> {
         return this._style;
+    }
+
+    getThemedir(): string {
+        return this._themedir;
     }
 
     _loadFile(themedir: string, asset: ThemeAsset): string {
