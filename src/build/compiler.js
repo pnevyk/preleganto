@@ -6,13 +6,13 @@ import type { Node, NodeMetadata } from '../syntax/parse';
 type PresentationAsset = 'control.js' | 'layout.css';
 
 import path from 'path';
-import fs from 'fs';
 
 import tipograph from 'tipograph';
 
 import parse from '../syntax/parse';
 import Template from './template';
 import Theme from './theme';
+import { read } from './files';
 import applyMacro from './macros';
 import applyBlock from './blocks';
 import { error, warn, IMPLEMENTATION_ERROR_MESSAGE } from '../logger';
@@ -24,7 +24,7 @@ export default class Compiler {
         this._rootpath = rootpath;
     }
 
-    compile(content: string): string {
+    async compile(content: string): Promise<string> {
         const tree = parse(content);
 
         if (tree.name === 'Presentation') {
@@ -39,24 +39,30 @@ export default class Compiler {
             const template = new Template();
             const theme = new Theme(metadata.theme, this._rootpath);
 
-            template.addCss(true, 'https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css');
-            template.addCss(true, 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css');
-            template.addCss(true, 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css');
-            template.addCss(false, this._loadRequiredAsset('layout.css'));
-            template.addCss(false, theme.renderStyle());
+            template.addCss(await read('https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css'));
+            template.addCss(
+                await read('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css')
+            );
+            template.addCss(await read('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css'));
 
-            template.addJs(false, this._loadRequiredAsset('control.js'));
-            template.addJs(true, 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js', {
+            template.addJs(await read('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js'), {
                 'data-manual': true
             });
-            template.addJs(true, 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js');
+
+            template.addCss(await this._loadRequiredAsset('layout.css'));
+
+            template.addCss(await theme.renderStyle());
+
+            template.addJs(await this._loadRequiredAsset('control.js'));
+
+            template.addJs(await read('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js'));
 
             if (metadata.customStyle) {
-                template.addCss(false, this._loadCustomAsset(metadata.customStyle));
+                template.addCss(await this._loadCustomAsset(metadata.customStyle));
             }
 
             if (metadata.customScript) {
-                template.addCss(false, this._loadCustomAsset(metadata.customScript));
+                template.addCss(await this._loadCustomAsset(metadata.customScript));
             }
 
             if (metadata.title) {
@@ -66,39 +72,45 @@ export default class Compiler {
             template.setMetadata(metadata);
 
             template.addSlide(theme.renderOpening(metadata));
-            tree.slides.forEach(slide => {
+
+            for (let slide of tree.slides) {
+                const content = await mapAsync(slide.value, element => compile(element, this._rootpath));
                 template.addSlide(theme.renderContent({
-                    content: slide.value.map(element => compile(element, this._rootpath)).join('\n')
+                    content: content.join('\n')
                 }));
-            });
+            }
+
             template.addSlide(theme.renderClosing(metadata));
 
 
-            return template.toHtml();
+            return Promise.resolve(template.toHtml());
         } else {
-            return '';
+            return Promise.resolve('');
         }
     }
 
-    _loadRequiredAsset(asset: PresentationAsset): string {
-        const filepath = path.join(__dirname, '..', 'presentation', asset);
+    async _loadRequiredAsset(asset: PresentationAsset): Promise<string> {
         try {
-            return fs.readFileSync(filepath).toString();
+            return await read(asset, path.join(__dirname, '..', 'presentation'));
         } catch (ex) {
             warn(IMPLEMENTATION_ERROR_MESSAGE);
             return '';
         }
     }
 
-    _loadCustomAsset(asset: string): string {
+    async _loadCustomAsset(asset: string): Promise<string> {
         const filepath = path.join(this._rootpath, asset);
         try {
-            return fs.readFileSync(filepath).toString();
+            return await read(asset, this._rootpath);
         } catch (ex) {
             error(`load error of ${filepath}: you specified non-existent custom file`);
             return '';
         }
     }
+}
+
+async function mapAsync<T, R>(values: Array<T>, callback: T => Promise<R>): Promise<Array<R>> {
+    return Promise.all(values.map(value => callback(value)));
 }
 
 function getMetadata(metadata: Array<NodeMetadata>): { [key: string]: string } {
@@ -113,30 +125,39 @@ function typography(text: string): string {
     return tipograph.Replace.all(text);
 }
 
-function compile(node: Node, rootpath: string): string {
+async function compile(node: Node, rootpath: string): Promise<string> {
+    let temp;
+
     switch (node.name) {
         case 'Heading':
-            return `<h${node.level}>${
-                typography(node.value.map(node => compile(node, rootpath)).join(''))
-            }</h${node.level}>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<h${node.level}>${typography(temp.join(''))}</h${node.level}>`;
         case 'Paragraph':
-            return `<p>${typography(node.value.map(node => compile(node, rootpath)).join(''))}</p>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<p>${typography(temp.join(''))}</p>`;
         case 'ListItem':
-            return `<li>${typography(node.value.map(node => compile(node, rootpath)).join(''))}</li>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<li>${typography(temp.join(''))}</li>`;
         case 'OrderedList':
-            return `<ol>${node.value.map(node => compile(node, rootpath)).join('')}</ol>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<ol>${typography(temp.join(''))}</ol>`;
         case 'UnorderedList':
-            return `<ul>${node.value.map(node => compile(node, rootpath)).join('')}</ul>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<ul>${typography(temp.join(''))}</ul>`;
         case 'Text':
             return node.value;
         case 'TextStrong':
-            return `<strong>${node.value.map(node => compile(node, rootpath)).join('')}</strong>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<strong>${typography(temp.join(''))}</strong>`;
         case 'TextEmph':
-            return `<em>${node.value.map(node => compile(node, rootpath)).join('')}</em>`;
+            temp = await mapAsync(node.value, node => compile(node, rootpath));
+            return `<em>${typography(temp.join(''))}</em>`;
         case 'TextMono':
-            return `<code>${compile(node.value, rootpath)}</code>`;
+            temp = await compile(node.value, rootpath);
+            return `<code>${temp}</code>`;
         case 'TextMacro':
-            return typography(applyMacro(node, rootpath));
+            temp = await applyMacro(node, rootpath);
+            return typography(temp);
         case 'SpecialBlock':
             return applyBlock(node);
         default:

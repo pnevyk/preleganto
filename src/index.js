@@ -52,7 +52,7 @@ const options = {
     }
 };
 
-function build(input: string, output: string, options: { rootpath: string }) {
+async function build(input: string, output: string, options: { rootpath: string }) {
     const compiler = new Compiler(options.rootpath);
 
     let source = '';
@@ -62,21 +62,23 @@ function build(input: string, output: string, options: { rootpath: string }) {
         error(`I can't find '${input}' :(`);
     }
 
-    const html = compiler.compile(source);
+    const html = await compiler.compile(source);
 
     try {
         fs.writeFileSync(output, html);
     } catch (ex) {
         error(`I can't manage to write '${output}' :(`);
     }
+
+    return Promise.resolve();
 }
 
-function watch(input: string, output: string, options: { rootpath: string }, callback: () => void = () => {}) {
+async function watch(input: string, output: string, options: { rootpath: string }, callback: () => void = () => {}) {
     log(`I am watching '${input}' for changes`);
     newline();
 
     let lastTime = moment();
-    fs.watch(input, eventType => {
+    fs.watch(input, async function (eventType) {
         if (eventType === 'rename') {
             log(`'${input}' was renamed or deleted wo I will stop watch it`);
             process.exit();
@@ -88,17 +90,19 @@ function watch(input: string, output: string, options: { rootpath: string }, cal
                 lastTime = time;
 
                 log(`(${time}) '${input}' was changed so I will try to build it again`);
-                build(input, output, options);
+                await build(input, output, options);
                 log('And I was successfull');
                 callback();
             }
         }
     });
+
+    return Promise.resolve();
 }
 
 yargs
     .version()
-    .command('build', commands.build, options.build, argv => {
+    .command('build', commands.build, options.build, async function (argv) {
         const options = {
             rootpath: path.join(process.cwd(), path.dirname(argv.input))
         };
@@ -107,16 +111,16 @@ yargs
         newline();
         log(`I will try to build '${argv.input}'`);
 
-        build(argv.input, argv.output, options);
+        await build(argv.input, argv.output, options);
 
         log(`I managed to build '${argv.input}' so I created '${argv.output}'`);
         newline();
 
         if (argv.watch) {
-            watch(argv.input, argv.output, options);
+            await watch(argv.input, argv.output, options);
         }
     })
-    .command('serve', commands.serve, options.serve, argv => {
+    .command('serve', commands.serve, options.serve, async function (argv) {
         const options = {
             rootpath: path.join(process.cwd(), path.dirname(argv.input))
         };
@@ -127,7 +131,7 @@ yargs
         newline();
         log(`I will try to build '${argv.input}'`);
 
-        build(argv.input, tempfile, options);
+        await build(argv.input, tempfile, options);
 
         log(`I managed to build '${argv.input}'`);
         log('Now I am spawning local server which will serve the presentation');
@@ -139,7 +143,7 @@ yargs
         server.run(tempfile);
 
         if (argv.watch) {
-            watch(argv.input, tempfile, options, () => server.reloadClients());
+            await watch(argv.input, tempfile, options, () => server.reloadClients());
         }
 
         process.on('exit', code => {

@@ -9,7 +9,7 @@ import katex from 'katex';
 
 import { warn } from '../logger';
 
-export default function (macro: NodeTextMacro, rootpath: string): string {
+export default async function (macro: NodeTextMacro, rootpath: string): Promise<string> {
     switch (macro.macro) {
         case 'link':
             return link(macro, rootpath);
