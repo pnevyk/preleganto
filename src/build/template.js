@@ -1,15 +1,26 @@
 // @flow
 
-export type Asset = { content: string, options: { [key: string]: string | boolean } };
+import type { BuildOptions } from '../config';
+
+import path from 'path';
+
+import { readFile, embedFonts } from './embedding';
+import { map } from '../async';
+
+export type Asset = { filepath: string, options: { [key: string]: string | boolean } };
 
 export default class Template {
+    _options: BuildOptions;
+
     _title: string;
     _css: Array<Asset>;
     _js: Array<Asset>;
     _slides: Array<string>;
     _metadata: { [key: string]: string };
 
-    constructor() {
+    constructor(options: BuildOptions) {
+        this._options = options;
+
         this._title = 'Preleganto presentation';
         this._css = [];
         this._js = [];
@@ -27,13 +38,13 @@ export default class Template {
         return this;
     }
 
-    addCss(content: string, options: { [key: string]: string | boolean } = {}): Template {
-        this._css.push({ content, options });
+    addCss(filepath: string, options: { [key: string]: string | boolean } = {}): Template {
+        this._css.push({ filepath, options });
         return this;
     }
 
-    addJs(content: string, options: { [key: string]: string | boolean } = {}): Template {
-        this._js.push({ content, options });
+    addJs(filepath: string, options: { [key: string]: string | boolean } = {}): Template {
+        this._js.push({ filepath, options });
         return this;
     }
 
@@ -42,13 +53,13 @@ export default class Template {
         return this;
     }
 
-    toHtml(): string {
+    async toHtml(): Promise<string> {
         return `<!DOCTYPE html>
             <html>
                 <head>
                     <meta charset="utf-8">
                     <title>${this._title}</title>
-                    ${this._css.map(this._compileCss, this).join('\n')}
+                    ${await map(this._css, this._compileCss.bind(this)).then(styles => styles.join('\n'))}
                 </head>
                 <body>
                     <main class="preleganto-presentation">
@@ -57,22 +68,31 @@ export default class Template {
                     <script type="text/preleganto-metadata">
                         ${this._compileMetadata()}
                     </script>
-                    ${this._js.map(this._compileJs, this).join('\n')}
+                    ${await map(this._js, this._compileJs.bind(this)).then(scripts => scripts.join('\n'))}
                 </body>
             </html>
         `;
     }
 
-    _compileCss(css: { content: string, options: { [key: string ]: string | boolean } }): string {
-        return `<style type="text/css" ${this._compileExtras(css.options)}>
-            ${css.content}
-        </style>`;
+    async _compileCss(css: { filepath: string, options: { [key: string ]: string | boolean } }): Promise<string> {
+        if (this._options.embed) {
+            const cssSource = await readFile(css.filepath).then(content => content.toString());
+            return `<style type="text/css" ${this._compileExtras(css.options)}>
+                ${await embedFonts(cssSource, path.dirname(css.filepath))}
+            </style>`;
+        } else {
+            return `<link rel="stylesheet" href="${css.filepath}" ${this._compileExtras(css.options)} />`;
+        }
     }
 
-    _compileJs(js: { content: string, options: { [key: string ]: string | boolean } }): string {
-        return `<script type="text/javascript" ${this._compileExtras(js.options)}>
-            ${js.content}
-        </script>`;
+    async _compileJs(js: { filepath: string, options: { [key: string ]: string | boolean } }): Promise<string> {
+        if (this._options.embed) {
+            return `<script type="text/javascript" ${this._compileExtras(js.options)}>
+                ${await readFile(js.filepath).then(content => content.toString())}
+            </script>`;
+        } else {
+            return `<script type="text/javascript" src="${js.filepath}" ${this._compileExtras(js.options)}></script>`;
+        }
     }
 
     _compileSlide(slide: string, index: number): string {

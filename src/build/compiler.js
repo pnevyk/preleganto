@@ -1,9 +1,7 @@
 // @flow
 
-import type { Config } from '../config';
+import type { Config, BuildOptions } from '../config';
 import type { Node, NodeMetadata } from '../syntax/parse';
-
-type PresentationAsset = 'control.js' | 'layout.css';
 
 import path from 'path';
 
@@ -12,17 +10,18 @@ import tipograph from 'tipograph';
 import parse from '../syntax/parse';
 import Template from './template';
 import Theme from './theme';
-import { readFile, embedFonts } from './embedding';
 import { map } from '../async';
 import applyMacro from './macros';
 import applyBlock from './blocks';
-import { error, warn, IMPLEMENTATION_ERROR_MESSAGE } from '../logger';
+import { warn, IMPLEMENTATION_ERROR_MESSAGE } from '../logger';
+
+const PRESENTATION_ASSETS_DIR = path.join(__dirname, '..', 'presentation');
 
 export default class Compiler {
-    _rootpath: string;
+    _options: BuildOptions;
 
-    constructor(rootpath: string) {
-        this._rootpath = rootpath;
+    constructor(options: BuildOptions) {
+        this._options = options;
     }
 
     async compile(content: string): Promise<string> {
@@ -37,56 +36,49 @@ export default class Compiler {
 
             const metadata: Config = Object.assign(defaultMetadata, getMetadata(tree.metadata));
 
-            const template = new Template();
-            const theme = new Theme(metadata.theme, this._rootpath);
+            const template = new Template(this._options);
+            const theme = new Theme(metadata.theme, this._options);
 
-            template.addCss(
-                await this._loadExternalCss('https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css')
-            );
+            // external styles
+            template.addCss('https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css');
+            template.addCss('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css');
+            template.addCss('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css');
 
-            template.addCss(
-                await this._loadExternalCss(
-                    'https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css'
-                )
-            );
+            // external scripts
+            template.addJs('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js', {
+                'data-manual': true
+            });
+            template.addJs('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js');
 
-            template.addCss(
-                await this._loadExternalCss('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css')
-            );
+            // local styles
+            template.addCss(path.join(PRESENTATION_ASSETS_DIR, 'layout.css'));
+            template.addCss(theme.getStyle());
 
-            template.addJs(
-                await this._loadExternalJs('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js'),
-                { 'data-manual': true }
-            );
+            // local scripts
+            template.addJs(path.join(PRESENTATION_ASSETS_DIR, 'control.js'));
 
-            template.addCss(await this._loadRequiredAsset('layout.css'));
-
-            template.addCss(await embedFonts(await theme.renderStyle(), theme.getThemedir()));
-
-            template.addJs(await this._loadRequiredAsset('control.js'));
-
-            template.addJs(
-                await this._loadExternalJs('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js')
-            );
-
+            // custom styles
             if (metadata.customStyle) {
-                template.addCss(await embedFonts(await this._loadCustomAsset(metadata.customStyle), this._rootpath));
+                template.addCss(path.join(this._options.rootpath, metadata.customStyle));
             }
 
+            // custom scripts
             if (metadata.customScript) {
-                template.addCss(await this._loadCustomAsset(metadata.customScript));
+                template.addJs(path.join(this._options.rootpath, metadata.customScript));
             }
 
             if (metadata.title) {
                 template.setTitle(metadata.title);
             }
 
+            // metadata
             template.setMetadata(metadata);
 
+            // content
             template.addSlide(theme.renderOpening(metadata));
 
             for (let slide of tree.slides) {
-                const content = await map(slide.value, element => compile(element, this._rootpath));
+                const content = await map(slide.value, element => compile(element, this._options.rootpath));
                 template.addSlide(theme.renderContent({
                     content: content.join('\n')
                 }));
@@ -95,46 +87,8 @@ export default class Compiler {
             template.addSlide(theme.renderClosing(metadata));
 
 
-            return Promise.resolve(template.toHtml());
+            return template.toHtml();
         } else {
-            return Promise.resolve('');
-        }
-    }
-
-    async _loadRequiredAsset(asset: PresentationAsset): Promise<string> {
-        try {
-            return readFile(asset, path.join(__dirname, '..', 'presentation')).then(content => content.toString());
-        } catch (ex) {
-            warn(IMPLEMENTATION_ERROR_MESSAGE);
-            return '';
-        }
-    }
-
-    async _loadCustomAsset(asset: string): Promise<string> {
-        const filepath = path.join(this._rootpath, asset);
-        try {
-            return readFile(asset, this._rootpath).then(content => content.toString());
-        } catch (ex) {
-            error(`load error of ${filepath}: you specified non-existent custom file`);
-            return '';
-        }
-    }
-
-    async _loadExternalCss(url: string): Promise<string> {
-        try {
-            const rootpath = path.dirname(url);
-            return embedFonts(await readFile(url, rootpath).then(content => content.toString()), rootpath);
-        } catch (ex) {
-            error(`load error of ${url}: there may be a problem with your internet connection`);
-            return '';
-        }
-    }
-
-    async _loadExternalJs(url: string): Promise<string> {
-        try {
-            return readFile(url).then(content => content.toString());
-        } catch (ex) {
-            error(`load error of ${url}: there may be a problem with your internet connection`);
             return '';
         }
     }

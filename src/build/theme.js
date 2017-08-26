@@ -1,39 +1,47 @@
 // @flow
 
+import type { BuildOptions } from '../config';
+
 import path from 'path';
 import fs from 'fs';
 
 import ejs from 'ejs';
 
-import { error } from '../logger';
+import { warn, error } from '../logger';
 
 export type Renderer = ({ data: { [key: string]: string }}) => string;
-type ThemeAsset = 'content.html' | 'opening.html' | 'closing.html' | 'style.css';
+type Template = 'content.html' | 'opening.html' | 'closing.html';
 
 const DEFAULT_THEME_DIR = path.join(__dirname, '..', '..', 'themes', 'default');
 
 export default class Theme {
+    _options: BuildOptions;
+    _style: string;
+
     _content: Renderer;
     _opening: Renderer;
     _closing: Renderer;
-    _style: string;
 
-    _themedir: string;
+    constructor(identifier: string, options: BuildOptions) {
+        this._options = options;
 
-    constructor(identifier: string, rootpath: string) {
         let themedir;
         if (identifier[0] === '.') {
-            themedir = path.join(rootpath, identifier);
+            themedir = path.join(options.rootpath, identifier);
         } else {
             themedir = path.join(__dirname, '..', '..', 'themes', identifier);
         }
 
-        this._content = ejs.compile(this._loadFile(themedir, 'content.html'));
-        this._opening = ejs.compile(this._loadFile(themedir, 'opening.html'));
-        this._closing = ejs.compile(this._loadFile(themedir, 'closing.html'));
-        this._style = this._loadFile(themedir, 'style.css');
+        if (fs.statSync(path.join(themedir, 'style.css')).isFile()) {
+            this._style = path.join(themedir, 'style.css');
+        } else {
+            warn('style not found: theme style was not found so fallback to default theme will be used');
+            this._style = path.join(DEFAULT_THEME_DIR, 'style.css');
+        }
 
-        this._themedir = themedir;
+        this._content = ejs.compile(this._loadTemplate(themedir, 'content.html'));
+        this._opening = ejs.compile(this._loadTemplate(themedir, 'opening.html'));
+        this._closing = ejs.compile(this._loadTemplate(themedir, 'closing.html'));
     }
 
     renderContent(data: { [key: string]: string }): string {
@@ -63,21 +71,17 @@ export default class Theme {
         }
     }
 
-    async renderStyle(): Promise<string> {
+    getStyle(): string {
         return this._style;
     }
 
-    getThemedir(): string {
-        return this._themedir;
-    }
-
-    _loadFile(themedir: string, asset: ThemeAsset): string {
+    _loadTemplate(themedir: string, asset: Template): string {
         const filepath = path.join(themedir, asset);
         try {
             if (fs.statSync(filepath).isFile()) {
                 return fs.readFileSync(filepath).toString();
             } else {
-                return fs.readFileSync(DEFAULT_THEME_DIR).toString();
+                return fs.readFileSync(path.join(DEFAULT_THEME_DIR, asset)).toString();
             }
         } catch (ex) {
             error(`load error of ${filepath}: you probably specified non-existent theme or its location`);
