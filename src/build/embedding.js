@@ -7,6 +7,10 @@ import https from 'https';
 
 import { replace } from '../async';
 
+export function isLocal(filepath: string): boolean {
+    return !/^https?/.test(filepath);
+}
+
 export async function readFile(filepath: string, rootpath: string = ''): Promise<Buffer> {
     return new Promise((resolve, reject) => {
         function readFromNetwork(protocol: typeof http | typeof https, url: string) {
