@@ -226,6 +226,15 @@ presentation on that server.
 * `-p`, `--port` - port on which local server is started
 * `-w`, `--watch` - watches source file and reloads the presentation in browser
 
+#### Export
+
+`preleganto export` builds a source file and embeds all dependencies into the
+output, so it is 100% portable.
+
+* `-i`, `--input` - path to source file
+* `-o`, `--output` - path where output file will be located
+* `-f`, `--format` - output format, only HTML is now supported
+
 ## Contributing
 
 I'd love to see anyone who wants to help, be it a pull request or just a
