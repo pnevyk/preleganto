@@ -16,6 +16,20 @@ header, footer {
     color: #6d4d47;
 }
 
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+footer > .slide-counter {
+    display: inline-block;
+    float: right;
+    padding-bottom: 2vh;
+    padding-right: 2vh;
+    font-size: 3.5vh;
+}
+
 pre, code {
     font-family: 'Ubuntu Mono', monospace;
 }
