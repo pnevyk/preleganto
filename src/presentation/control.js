@@ -7,7 +7,7 @@ type Metadata = {
     theme?: string,
 };
 
-type InputEvent = 'previous' | 'next' | 'ratio' | 'beginning' | 'end' | 'backward' | 'forward';
+type InputEvent = 'previous' | 'next' | 'ratio' | 'beginning' | 'end' | 'backward' | 'forward' | 'speakermode';
 
 type ServerAction = {
     name: 'goTo',
@@ -53,9 +53,10 @@ type ServerAction = {
 
             // wait on dom load so touch events can be listened on document body
             document.addEventListener('DOMContentLoaded', () => {
-                let command: 'slides' | null = null;
+                let command: 'slides' | 'speakermode' | null = null;
                 let startXFactors = [];
                 let startYFactors = [];
+                let endYFactors = [];
 
                 const body = document.body;
 
@@ -66,6 +67,12 @@ type ServerAction = {
                             command = 'slides';
                             startXFactors.push(ev.touches[0].clientX / window.innerWidth);
                             startYFactors.push(ev.touches[0].clientY / window.innerHeight);
+                            ev.preventDefault();
+                        } else if (ev.touches.length === 2) {
+                            // toggle speaker mode with two fingers in vertical direction
+                            command = 'speakermode';
+                            startYFactors.push(ev.touches[0].clientY / window.innerHeight);
+                            startYFactors.push(ev.touches[1].clientY / window.innerHeight);
                             ev.preventDefault();
                         }
                     });
@@ -94,12 +101,29 @@ type ServerAction = {
                                         this._emit('previous');
                                     }
                                 }
+                            } else if (command === 'speakermode') {
+                                for (let touch of ev.changedTouches) {
+                                    endYFactors.push(touch.clientY / window.innerHeight);
+                                }
+
+                                if (endYFactors.length === 2) {
+                                    let deltaFirst = startYFactors[0] - endYFactors[0];
+                                    let deltaSecond = startYFactors[1] - endYFactors[1];
+
+                                    if (Math.max(deltaFirst, deltaSecond) < -0.1) {
+                                        this._emit('speakermode');
+                                    }
+                                } else {
+                                    ev.preventDefault();
+                                    return;
+                                }
                             }
 
                             // reset variables
                             command = null;
                             startXFactors = [];
                             startYFactors = [];
+                            endYFactors = [];
                             ev.preventDefault();
                         }
                     });
@@ -110,6 +134,7 @@ type ServerAction = {
                             command = null;
                             startXFactors = [];
                             startYFactors = [];
+                            endYFactors = [];
                             ev.preventDefault();
                         }
                     });
@@ -151,6 +176,9 @@ type ServerAction = {
                 case 'r':
                 case 'R':
                     return 'ratio';
+                case 's':
+                case 'S':
+                    return 'speakermode';
                 default:
                     return null;
             }
