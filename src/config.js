@@ -8,3 +8,8 @@ export type Config = {
     customStyle?: string,
     customScript?: string,
 };
+
+export type BuildOptions = {
+    rootpath: string,
+    embed: boolean
+};

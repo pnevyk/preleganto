@@ -7,7 +7,7 @@ type Metadata = {
     theme?: string,
 };
 
-type InputEvent = 'previous' | 'next' | 'ratio';
+type InputEvent = 'previous' | 'next' | 'ratio' | 'beginning' | 'end' | 'backward' | 'forward';
 
 type ServerAction = {
     name: 'goTo',
@@ -50,6 +50,71 @@ type ServerAction = {
                     this._emit(inputEvent);
                 }
             });
+
+            // wait on dom load so touch events can be listened on document body
+            document.addEventListener('DOMContentLoaded', () => {
+                let command: 'slides' | null = null;
+                let startXFactors = [];
+                let startYFactors = [];
+
+                const body = document.body;
+
+                if (body) {
+                    body.addEventListener('touchstart', (ev: TouchEvent) => {
+                        if (ev.touches.length === 1) {
+                            // move slides using just one finger
+                            command = 'slides';
+                            startXFactors.push(ev.touches[0].clientX / window.innerWidth);
+                            startYFactors.push(ev.touches[0].clientY / window.innerHeight);
+                            ev.preventDefault();
+                        }
+                    });
+
+                    body.addEventListener('touchend', (ev: TouchEvent) => {
+                        if (command) {
+                            if (command === 'slides') {
+                                let endXFactor = ev.changedTouches[0].clientX / window.innerWidth;
+                                let endYFactor = ev.changedTouches[0].clientY / window.innerHeight;
+
+                                let deltaX = startXFactors[0] - endXFactor;
+                                let deltaY = startYFactors[0] - endYFactor;
+
+                                // select direction where the move was more significant
+                                // then require some threshold of move distance
+                                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                                    if (deltaX > 0.1) {
+                                        this._emit('next');
+                                    } else if (deltaX < -0.1) {
+                                        this._emit('previous');
+                                    }
+                                } else {
+                                    if (deltaY > 0.1) {
+                                        this._emit('next');
+                                    } else if (deltaY < -0.1) {
+                                        this._emit('previous');
+                                    }
+                                }
+                            }
+
+                            // reset variables
+                            command = null;
+                            startXFactors = [];
+                            startYFactors = [];
+                            ev.preventDefault();
+                        }
+                    });
+
+                    body.addEventListener('touchcancel', (ev: TouchEvent) => {
+                        if (command) {
+                            // reset variables
+                            command = null;
+                            startXFactors = [];
+                            startYFactors = [];
+                            ev.preventDefault();
+                        }
+                    });
+                }
+            });
         }
 
         on(event: InputEvent, listener: () => mixed): Input {
@@ -75,6 +140,14 @@ type ServerAction = {
                 case ' ':
                 case 'Enter':
                     return 'next';
+                case 'Home':
+                    return 'beginning';
+                case 'End':
+                    return 'end';
+                case 'PageUp':
+                    return 'backward';
+                case 'PageDown':
+                    return 'forward';
                 case 'r':
                 case 'R':
                     return 'ratio';
@@ -134,6 +207,22 @@ type ServerAction = {
 
         next(): number {
             return this.goTo(this._current + 1);
+        }
+
+        beginning(): number {
+            return this.goTo(0);
+        }
+
+        end(): number {
+            return this.goTo(this._slides.length - 1);
+        }
+
+        backward(): number {
+            return this.goTo(this._current - 5);
+        }
+
+        forward(): number {
+            return this.goTo(this._current + 5);
         }
 
         switchRatio() {
@@ -207,6 +296,10 @@ type ServerAction = {
 
             this._input.on('previous', () => this.previous());
             this._input.on('next', () => this.next());
+            this._input.on('beginning', () => this.beginning());
+            this._input.on('end', () => this.end());
+            this._input.on('backward', () => this.backward());
+            this._input.on('forward', () => this.forward());
             this._input.on('ratio', () => this.switchRatio());
         }
 

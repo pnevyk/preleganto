@@ -1,5 +1,7 @@
 // @flow
 
+import type { BuildOptions } from './config';
+
 import path from 'path';
 import fs from 'fs';
 
@@ -13,6 +15,7 @@ import { log, error, newline, logo } from './logger';
 const commands = {
     build: 'Build a preleganto presentation into HTML file',
     serve: 'Serve a preleganto presentation on local server',
+    export: 'Export a preleganto presentation into full-featured file in specified format',
 };
 
 const options = {
@@ -49,11 +52,29 @@ const options = {
             default: false,
             description: 'Watch the source file, rebuild presentation on change and reload all connected clients'
         }
-    }
+    },
+    export: {
+        input: {
+            alias: 'i',
+            required: true,
+            description: 'A file with preleganto content'
+        },
+        output: {
+            alias: 'o',
+            default: 'slides.html',
+            description: 'An output file',
+        },
+        format: {
+            alias: 'f',
+            choices: ['html'],
+            default: 'html',
+            description: 'Format of the output',
+        }
+    },
 };
 
-function build(input: string, output: string, options: { rootpath: string }) {
-    const compiler = new Compiler(options.rootpath);
+async function build(input: string, output: string, options: BuildOptions) {
+    const compiler = new Compiler(options);
 
     let source = '';
     try {
@@ -62,21 +83,23 @@ function build(input: string, output: string, options: { rootpath: string }) {
         error(`I can't find '${input}' :(`);
     }
 
-    const html = compiler.compile(source);
+    const html = await compiler.compile(source);
 
     try {
         fs.writeFileSync(output, html);
     } catch (ex) {
         error(`I can't manage to write '${output}' :(`);
     }
+
+    return Promise.resolve();
 }
 
-function watch(input: string, output: string, options: { rootpath: string }, callback: () => void = () => {}) {
+async function watch(input: string, output: string, options: BuildOptions, callback: () => void = () => {}) {
     log(`I am watching '${input}' for changes`);
     newline();
 
     let lastTime = moment();
-    fs.watch(input, eventType => {
+    fs.watch(input, async function (eventType) {
         if (eventType === 'rename') {
             log(`'${input}' was renamed or deleted wo I will stop watch it`);
             process.exit();
@@ -88,37 +111,41 @@ function watch(input: string, output: string, options: { rootpath: string }, cal
                 lastTime = time;
 
                 log(`(${time}) '${input}' was changed so I will try to build it again`);
-                build(input, output, options);
+                await build(input, output, options);
                 log('And I was successfull');
                 callback();
             }
         }
     });
+
+    return Promise.resolve();
 }
 
 yargs
     .version()
-    .command('build', commands.build, options.build, argv => {
+    .command('build', commands.build, options.build, async function (argv) {
         const options = {
-            rootpath: path.join(process.cwd(), path.dirname(argv.input))
+            rootpath: path.join(process.cwd(), path.dirname(argv.input)),
+            embed: false
         };
 
         logo();
         newline();
         log(`I will try to build '${argv.input}'`);
 
-        build(argv.input, argv.output, options);
+        await build(argv.input, argv.output, options);
 
         log(`I managed to build '${argv.input}' so I created '${argv.output}'`);
         newline();
 
         if (argv.watch) {
-            watch(argv.input, argv.output, options);
+            await watch(argv.input, argv.output, options);
         }
     })
-    .command('serve', commands.serve, options.serve, argv => {
+    .command('serve', commands.serve, options.serve, async function (argv) {
         const options = {
-            rootpath: path.join(process.cwd(), path.dirname(argv.input))
+            rootpath: path.join(process.cwd(), path.dirname(argv.input)),
+            embed: false
         };
 
         const tempfile = path.join(options.rootpath, path.basename(argv.input, path.extname(argv.input))) + '.tmp';
@@ -127,7 +154,7 @@ yargs
         newline();
         log(`I will try to build '${argv.input}'`);
 
-        build(argv.input, tempfile, options);
+        await build(argv.input, tempfile, options);
 
         log(`I managed to build '${argv.input}'`);
         log('Now I am spawning local server which will serve the presentation');
@@ -139,7 +166,7 @@ yargs
         server.run(tempfile);
 
         if (argv.watch) {
-            watch(argv.input, tempfile, options, () => server.reloadClients());
+            await watch(argv.input, tempfile, options, () => server.reloadClients());
         }
 
         process.on('exit', code => {
@@ -153,6 +180,22 @@ yargs
         process.on('SIGINT', () => {
             process.exit(0);
         });
+    })
+    .command('export', commands.export, options.export, async function (argv) {
+        const options = {
+            rootpath: path.join(process.cwd(), path.dirname(argv.input)),
+            embed: true
+        };
+
+        logo();
+        newline();
+        log(`I will try to export '${argv.input}' to ${argv.format.toUpperCase()}`);
+        log('It may take a while since external dependencies are being downloaded and binary files are being embedded');
+
+        await build(argv.input, argv.output, options);
+
+        log(`I managed to export '${argv.input}' to '${argv.output}'`);
+        newline();
     })
     .help()
     .strict(true)

@@ -1,30 +1,30 @@
 // @flow
 
-import type { Config } from '../config';
-import type { Node, NodeMetadata } from '../syntax/parse';
-
-type PresentationAsset = 'control.js' | 'layout.css';
+import type { Config, BuildOptions } from '../config';
+import type { Node, NodeMetadata, NodeSlide } from '../syntax/parse';
 
 import path from 'path';
-import fs from 'fs';
 
 import tipograph from 'tipograph';
 
 import parse from '../syntax/parse';
 import Template from './template';
 import Theme from './theme';
+import { map } from '../async';
 import applyMacro from './macros';
 import applyBlock from './blocks';
-import { error, warn, IMPLEMENTATION_ERROR_MESSAGE } from '../logger';
+import { warn, IMPLEMENTATION_ERROR_MESSAGE } from '../logger';
+
+const PRESENTATION_ASSETS_DIR = path.join(__dirname, '..', 'presentation');
 
 export default class Compiler {
-    _rootpath: string;
+    _options: BuildOptions;
 
-    constructor(rootpath: string) {
-        this._rootpath = rootpath;
+    constructor(options: BuildOptions) {
+        this._options = options;
     }
 
-    compile(content: string): string {
+    async compile(content: string): Promise<string> {
         const tree = parse(content);
 
         if (tree.name === 'Presentation') {
@@ -36,66 +36,62 @@ export default class Compiler {
 
             const metadata: Config = Object.assign(defaultMetadata, getMetadata(tree.metadata));
 
-            const template = new Template();
-            const theme = new Theme(metadata.theme, this._rootpath);
+            const template = new Template(this._options);
+            const theme = new Theme(metadata.theme, this._options);
 
-            template.addCss(true, 'https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css');
-            template.addCss(true, 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css');
-            template.addCss(true, 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css');
-            template.addCss(false, this._loadRequiredAsset('layout.css'));
-            template.addCss(false, theme.renderStyle());
+            // external styles
+            template.addCss('https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css');
+            template.addCss('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-okaidia.min.css');
+            template.addCss('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css');
 
-            template.addJs(false, this._loadRequiredAsset('control.js'));
-            template.addJs(true, 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js', {
+            // external scripts
+            template.addJs('https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js', {
                 'data-manual': true
             });
-            template.addJs(true, 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js');
+            template.addJs('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js');
 
+            // local styles
+            template.addCss(path.join(PRESENTATION_ASSETS_DIR, 'layout.css'));
+            template.addCss(theme.getStyle());
+
+            // local scripts
+            template.addJs(path.join(PRESENTATION_ASSETS_DIR, 'control.js'));
+
+            // custom styles
             if (metadata.customStyle) {
-                template.addCss(false, this._loadCustomAsset(metadata.customStyle));
+                template.addCss(path.join(this._options.rootpath, metadata.customStyle));
             }
 
+            // custom scripts
             if (metadata.customScript) {
-                template.addCss(false, this._loadCustomAsset(metadata.customScript));
+                template.addJs(path.join(this._options.rootpath, metadata.customScript));
             }
 
             if (metadata.title) {
                 template.setTitle(metadata.title);
             }
 
+            // metadata
             template.setMetadata(metadata);
 
-            template.addSlide(theme.renderOpening(metadata));
-            tree.slides.forEach(slide => {
+            // content
+            template.addSlide(theme.renderOpening({ ...metadata }));
+
+            const slidesInfo = getSlidesInfo(tree.slides);
+
+            for (let i = 0; i < tree.slides.length; i++) {
+                const content = await map(tree.slides[i].value, element => compile(element, this._options.rootpath));
                 template.addSlide(theme.renderContent({
-                    content: slide.value.map(element => compile(element)).join('\n')
+                    content: content.join('\n'),
+                    ...slidesInfo[i],
                 }));
-            });
-            template.addSlide(theme.renderClosing(metadata));
+            }
+
+            template.addSlide(theme.renderClosing({ ...metadata }));
 
 
             return template.toHtml();
         } else {
-            return '';
-        }
-    }
-
-    _loadRequiredAsset(asset: PresentationAsset): string {
-        const filepath = path.join(__dirname, '..', 'presentation', asset);
-        try {
-            return fs.readFileSync(filepath).toString();
-        } catch (ex) {
-            warn(IMPLEMENTATION_ERROR_MESSAGE);
-            return '';
-        }
-    }
-
-    _loadCustomAsset(asset: string): string {
-        const filepath = path.join(this._rootpath, asset);
-        try {
-            return fs.readFileSync(filepath).toString();
-        } catch (ex) {
-            error(`load error of ${filepath}: you specified non-existent custom file`);
             return '';
         }
     }
@@ -109,32 +105,111 @@ function getMetadata(metadata: Array<NodeMetadata>): { [key: string]: string } {
     }, {});
 }
 
+type SlideInfo = {
+    currentSlide: number,
+    slidesTotal: number,
+    currentView: number,
+    viewsTotal: number,
+    viewsCountInSlide: number,
+    currentViewInSlide: number,
+};
+
+function getSlidesInfo(slides: Array<NodeSlide>): Array<SlideInfo> {
+    if (slides.length === 0) {
+        return [];
+    }
+
+    let slidesTotal = 0;
+    let viewsTotal = 0;
+
+    let slidesInfo: Array<SlideInfo> = [];
+
+    for (let slide of slides) {
+        let metadata = getMetadata(slide.metadata);
+        if (metadata.previousSlideNumber !== '') {
+            slidesTotal++;
+        }
+
+        viewsTotal++;
+
+        slidesInfo.push({
+            currentSlide: slidesTotal,
+            slidesTotal: 0,
+            currentView: viewsTotal,
+            viewsTotal: 0,
+            currentViewInSlide: 0,
+            viewsCountInSlide: 0,
+        });
+    }
+
+    for (let i = 0; i < slidesInfo.length;) {
+        let currentSlide = slidesInfo[i].currentSlide;
+        let startView = slidesInfo[i].currentView;
+
+        let nextSlide;
+        for (nextSlide = i + 1; nextSlide < slidesInfo.length; nextSlide++) {
+            if (slidesInfo[nextSlide].currentSlide !== currentSlide) {
+                break;
+            }
+        }
+
+        let viewsCountInSlide;
+        if (nextSlide !== slidesInfo.length) {
+            viewsCountInSlide = slidesInfo[nextSlide].currentView - startView;
+        } else {
+            viewsCountInSlide = viewsTotal - startView + 1;
+        }
+
+        for (let j = i; j < nextSlide; j++) {
+            slidesInfo[j].slidesTotal = slidesTotal;
+            slidesInfo[j].viewsTotal = viewsTotal;
+            slidesInfo[j].currentViewInSlide = j - i + 1;
+            slidesInfo[j].viewsCountInSlide = viewsCountInSlide;
+        }
+
+        i = nextSlide;
+    }
+
+    return slidesInfo;
+}
+
 function typography(text: string): string {
     return tipograph.Replace.all(text);
 }
 
-function compile(node: Node): string {
+async function compile(node: Node, rootpath: string): Promise<string> {
+    let temp;
+
     switch (node.name) {
         case 'Heading':
-            return `<h${node.level}>${typography(node.value.map(compile).join(''))}</h${node.level}>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<h${node.level}>${typography(temp.join(''))}</h${node.level}>`;
         case 'Paragraph':
-            return `<p>${typography(node.value.map(compile).join(''))}</p>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<p>${typography(temp.join(''))}</p>`;
         case 'ListItem':
-            return `<li>${typography(node.value.map(compile).join(''))}</li>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<li>${typography(temp.join(''))}</li>`;
         case 'OrderedList':
-            return `<ol>${node.value.map(compile).join('')}</ol>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<ol>${typography(temp.join(''))}</ol>`;
         case 'UnorderedList':
-            return `<ul>${node.value.map(compile).join('')}</ul>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<ul>${typography(temp.join(''))}</ul>`;
         case 'Text':
             return node.value;
         case 'TextStrong':
-            return `<strong>${node.value.map(compile).join('')}</strong>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<strong>${typography(temp.join(''))}</strong>`;
         case 'TextEmph':
-            return `<em>${node.value.map(compile).join('')}</em>`;
+            temp = await map(node.value, node => compile(node, rootpath));
+            return `<em>${typography(temp.join(''))}</em>`;
         case 'TextMono':
-            return `<code>${compile(node.value)}</code>`;
+            temp = await compile(node.value, rootpath);
+            return `<code>${temp}</code>`;
         case 'TextMacro':
-            return typography(applyMacro(node));
+            temp = await applyMacro(node, rootpath);
+            return typography(temp);
         case 'SpecialBlock':
             return applyBlock(node);
         default:

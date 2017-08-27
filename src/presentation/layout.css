@@ -1,5 +1,7 @@
 body {
     overflow: hidden;
+    font-size: 5vh;
+    font-family: sans-serif;
 }
 
 main.preleganto-presentation > section.preleganto-slide {
@@ -8,4 +10,38 @@ main.preleganto-presentation > section.preleganto-slide {
     margin-right: auto;
     margin-bottom: 100px;
     overflow: hidden;
+}
+
+section.preleganto-slide > section {
+    padding: 7vh 7vw 7vh 7vw;
+}
+
+h1 {
+    margin-top: 1vh;
+    font-size: 8vh;
+}
+
+h2 {
+    margin-top: 1vh;
+    font-size: 6vh;
+}
+
+h3 {
+    margin-top: 1vh;
+    font-size: 5vh;
+}
+
+img {
+    max-width: 100%;
+    max-height: 90vh;
+    display: block;
+}
+
+.preleganto-display-math {
+    overflow: visible;
+    display: table; /* inline-block does not work, don't know why */
+}
+
+.katex {
+    white-space: normal; /* fix spaces in katex output */
 }

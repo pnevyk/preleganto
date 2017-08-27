@@ -2,12 +2,12 @@
 
 import type { NodeSpecialBlock } from '../syntax/parse';
 
-import { highlight, supports } from '../prism';
+import { highlight, supports, mapAliases } from '../prism';
 import katex from 'katex';
 
 import { warn } from '../logger';
 
-export default function (block: NodeSpecialBlock): string {
+export default async function (block: NodeSpecialBlock): Promise<string> {
     switch (block.block) {
         case 'source':
             return source(block);
@@ -21,7 +21,7 @@ export default function (block: NodeSpecialBlock): string {
 
 function source(block: NodeSpecialBlock): string {
     if (block.args.length > 0) {
-        const language = block.args[0];
+        const language = mapAliases(block.args[0]);
         if (supports(language)) {
             const highlighted = highlight(block.value, language);
             return `<pre class="preleganto-source"><code class="language-${language}">${highlighted}</code></pre>`;
