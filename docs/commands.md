@@ -35,7 +35,7 @@ automatically rebuilt on change. Moreover, each connected client is then
 Build source file with content and embed all resources into output file. This
 file requires **no internet connection** and is fully portable. At the moment,
 only HTML format is supported, but in the future others may be implemented (PDF
-has highest priority).
+has the highest priority).
 
 * `-i`, `--input` - Path to source file.
 * `-o`, `--output` - Path where output file will be located.
