@@ -17,7 +17,16 @@ node index.js build --input examples/preleganto.adoc
 
 ## NPM scripts
 
-* `build`
+* `build` - builds all sources to `lib/` directory, you can then run
+  `node index.js` file in the root directory
+* `build:watch` - the same as above but it also watches the source files and
+  rebuilds on change
+* `clean` - removes `lib/` directory
+* `test` - runs all tests
+* `test:commands` - runs only tests related to cli commands
+* `test:unit` - runs only unit tests
+* `flow` - checks if the sources contain any Flow errors
+* `eslint` - lints the sources with project configuration
 
 ## Roadmap
 
