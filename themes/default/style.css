@@ -20,14 +20,24 @@ footer {
     position: absolute;
     bottom: 0;
     width: 100%;
+    text-align: center;
+    font-size: 3.5vh;
+}
+
+footer > section {
+    display: inline-block;
+}
+
+footer > .footer-title {
+    float: left;
+    padding-bottom: 2vh;
+    padding-left: 2vh;
 }
 
 footer > .slide-counter {
-    display: inline-block;
     float: right;
     padding-bottom: 2vh;
     padding-right: 2vh;
-    font-size: 3.5vh;
 }
 
 pre, code {
