@@ -2,8 +2,8 @@
 
 ## Switching slides
 
-* *Go to next slide*: `ArrowRight`, `ArrowDown`, `Space`, `Enter`, `SwipeUp`,
-  `SwipeDown`
+* *Go to next slide*: `ArrowRight`, `ArrowDown`, `Space`, `Enter`, `SwipeLeft`,
+  `SwipeUp`
 * *Go to previous slide*: `ArrowLeft`, `ArrowUp`, `SwipeRight`, `SwipeDown`
 * *Skip next 5 slides*: `PageDown`
 * *Skip previous 5 slides*: `PageUp`
