@@ -173,3 +173,49 @@ code {
     padding: 2vh;
     border-radius: 1vh;
 }
+
+@media (max-width: 1100px) {
+    ul > li:before {
+        font-size: 2.5vh;
+        margin-right: 1.3vh;
+        margin-left: -3.4vh;
+        top: -0.24vh;
+    }
+
+    ol > li:before {
+        margin-right: 1.2vh;
+        margin-left: -3.2vh;
+        font-size: 1.5vh;
+        top: -0.5vh;
+        padding-left: 0.5vh;
+        padding-right: 0.6vh;
+        padding-top: 0.15vh;
+        padding-bottom: 0.25vh;
+    }
+
+    .opening {
+        margin-left: 3vw;
+        margin-right: 3vw;
+    }
+
+    .opening h1 {
+        font-size: 7vh;
+    }
+
+    .opening h2 {
+        font-size: 5vh;
+    }
+
+    .opening h3 {
+        font-size: 4vh;
+    }
+
+    .closing {
+        margin-left: 3vw;
+        margin-right: 3vw;
+    }
+
+    .closing h1 {
+        font-size: 7vh;
+    }
+}
