@@ -737,7 +737,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     this._current = index;
                 }
 
-                if (notify && this._socket !== null) {
+                if (notify && this._socket && typeof this._socket.send === 'function') {
                     var action = { name: 'goTo', index: index };
                     if (this._socket.readyState === WebSocket.OPEN) {
                         this._sendServerEvent(action);
@@ -894,11 +894,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     // presentation is served from a server
                     this._socket = new WebSocket('ws://' + window.location.host);
 
-                    if (!this._socket) {
-                        this._socket = null;
-                        return;
-                    }
-
                     this._socket.onopen = function () {
                         _this4._sendServerEvent({ name: 'sync' });
                         _this4._actionQueue.forEach(function (action) {
@@ -938,7 +933,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: '_sendServerEvent',
             value: function _sendServerEvent(action) {
-                if (this._socket !== null) {
+                if (this._socket && typeof this._socket.send === 'function') {
                     this._socket.send(JSON.stringify(action));
                 }
             }
