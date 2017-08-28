@@ -3,7 +3,8 @@
 Yet another in-browser presentation tool which transforms source content written
 in [AsciiDoc](http://asciidoctor.org/)-like syntax (kind of similar to Markdown)
 into HTML. It offers convenient command line interface and some advanced
-features.
+features. You can see Preleganto in action
+[here](https://pnevyk.github.io/preleganto/).
 
 ## List of features
 
