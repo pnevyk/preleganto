@@ -4,8 +4,6 @@
 
 body {
     background-color: #91a19b;
-    font-size: 5vh;
-    color: #362623;
     font-family: 'PT Sans', sans-serif;
 }
 
@@ -14,27 +12,32 @@ body {
     box-shadow: 0 0 10px 3px rgba(0, 0, 0, 1);
 }
 
-.preleganto-slide > section {
-    padding: 7vh 7vw 7vh 7vw;
-}
-
 header, footer {
     color: #6d4d47;
 }
 
-h1 {
-    margin-top: 1vh;
-    font-size: 8vh;
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 3.5vh;
 }
 
-h2 {
-    margin-top: 1vh;
-    font-size: 6vh;
+footer > section {
+    display: inline-block;
 }
 
-h3 {
-    margin-top: 1vh;
-    font-size: 5vh;
+footer > .footer-title {
+    float: left;
+    padding-bottom: 2vh;
+    padding-left: 2vh;
+}
+
+footer > .slide-counter {
+    float: right;
+    padding-bottom: 2vh;
+    padding-right: 2vh;
 }
 
 pre, code {
@@ -42,7 +45,7 @@ pre, code {
 }
 
 ul, ol {
-    padding-left: 4vw;
+    padding-left: 6vh;
     list-style: none;
 }
 
@@ -79,8 +82,8 @@ ul > li:before {
     content: "\27a4";
     color: #6d4d47;
     font-size: 4.2vh;
-    margin-right: 2vw;
-    margin-left: -4vw;
+    margin-right: 2.1vh;
+    margin-left: -5.7vh;
     position: relative;
     top: -0.4vh;
 }
@@ -89,16 +92,17 @@ ol > li:before {
     background-color: #6d4d47;
     color: #f0ece3;
     font-weight: bold;
-    margin-right: 1.75vw;
-    margin-left: -3.75vw;
+    margin-right: 2vh;
+    margin-left: -5.35vh;
     font-family: 'Ubuntu Mono', monospace;
     font-size: 2.5vh;
     position: relative;
     top: -0.9vh;
-    padding-left: 0.7vh;
-    padding-right: 0.7vh;
-    border: 3px solid #6d4d47;
-    border-radius: 2.5vh;
+    padding-left: 1vh;
+    padding-right: 1vh;
+    padding-top: 0.3vh;
+    padding-bottom: 0.4vh;
+    border-radius: 100%;
 }
 
 a {
@@ -107,9 +111,6 @@ a {
 }
 
 img {
-    max-width: 100%;
-    max-height: 90vh;
-    display: block;
     position: relative;
     margin-left: auto;
     margin-right: auto;
@@ -159,8 +160,6 @@ img {
 }
 
 .preleganto-display-math {
-    overflow: visible;
-    display: table; /* inline-block does not work, don't know why */
     position: relative;
     margin-left: auto;
     margin-right: auto;
@@ -185,6 +184,48 @@ code {
     border-radius: 1vh;
 }
 
-.katex {
-    white-space: normal;
+@media (max-width: 1100px) {
+    ul > li:before {
+        font-size: 2.5vh;
+        margin-right: 1.3vh;
+        margin-left: -3.4vh;
+        top: -0.24vh;
+    }
+
+    ol > li:before {
+        margin-right: 1.2vh;
+        margin-left: -3.2vh;
+        font-size: 1.5vh;
+        top: -0.5vh;
+        padding-left: 0.5vh;
+        padding-right: 0.6vh;
+        padding-top: 0.15vh;
+        padding-bottom: 0.25vh;
+    }
+
+    .opening {
+        margin-left: 3vw;
+        margin-right: 3vw;
+    }
+
+    .opening h1 {
+        font-size: 7vh;
+    }
+
+    .opening h2 {
+        font-size: 5vh;
+    }
+
+    .opening h3 {
+        font-size: 4vh;
+    }
+
+    .closing {
+        margin-left: 3vw;
+        margin-right: 3vw;
+    }
+
+    .closing h1 {
+        font-size: 7vh;
+    }
 }

@@ -372,9 +372,9 @@ const REGEX_INLINE_PLAIN = /^([^*_`]+)/;
 const REGEX_INLINE_INNER_STRONG = /^\*\*(?!\s)([^(?:**)]+)\*\*/;
 const REGEX_INLINE_INNER_EMPH = /^__(?!\s)([^(?:__)]+)__/;
 const REGEX_INLINE_INNER_MONO = /^``(?!\s)([^(?:``)]+)``/;
-const REGEX_INLINE_STRONG = /^\*(?!\s)([^*]+\S)\*/;
-const REGEX_INLINE_EMPH = /^_(?!\s)([^_]+\S)_/;
-const REGEX_INLINE_MONO = /^`(?!\s)([^`]+\S)`/;
+const REGEX_INLINE_STRONG = /^\*(?!\s)([^*]*\S)\*/;
+const REGEX_INLINE_EMPH = /^_(?!\s)([^_]*\S)_/;
+const REGEX_INLINE_MONO = /^`(?!\s)([^`]*\S)`/;
 
 function parseInline(value: string): Array<any> {
     let output = [];

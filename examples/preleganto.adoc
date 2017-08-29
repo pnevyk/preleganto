@@ -1,33 +1,109 @@
-:title: Preleganto
-:author: Petr Nevyhoštěný
-:ratio: 16:10
+:title: Preleganto Introduction
+:ratio: 4:3
 
 '''
 
-= Introduction
+= Description
 
-* Another in-browser presentation tool
-* Simple yet elegant design
-* Presentations written in limited subset of
-link:http://asciidoctor.org/[AsciiDoc] syntax (very similar to Markdown)
+* Yet another in-browser presentation tool
+* Content in link:http://asciidoctor.org/[AsciiDoc]-like syntax (kind of similar
+  to Markdown)
 * Convenient command line interface
-* Advanced features
+* Some advanced features
 
 '''
 
-= Notable Features
+= Motivation
 
-* Convenient "source code to presentation" generation -- no manual HTML editing
+* There are many HTML presentation tools out there and they are great
+* Often, they require some manual touch with HTML source itself
+* They don't offer something more than generating a nice presentation
+
+'''
+
+= Must-have Features
+
+* Transforming markup to HTML
+* Text formatting, links, images, ...
 * Built-in and custom themes and layouts
-* Automatic typographic link:https://github.com/pnevyk/tipograph[correction]
-(e.g., "quotes", symbols such as (tm), ...)
-* Out-of-the-box support for:
-.. Source code highlighting
-.. math:{LaTeX{}}[] typesetting
+* Source code link:https://github.com/PrismJS/prism[highlighting]
+* Touch devices support
+
+'''
+
+= Advanced Features
+
+* Smart typographic link:https://github.com/pnevyk/tipograph[substitution]
+
+'''
+:previous-slide-number:
+
+= Advanced Features
+
+* Smart typographic link:https://github.com/pnevyk/tipograph[substitution]
+* Inline and block math:{LaTeX{}}[]
+  link:https://github.com/Khan/KaTeX[typesetting]
+
+'''
+:previous-slide-number:
+
+= Advanced Features
+
+* Smart typographic link:https://github.com/pnevyk/tipograph[substitution]
+* Inline and block math:{LaTeX{}}[]
+  link:https://github.com/Khan/KaTeX[typesetting]
+* Local server with multiple devices synchronization and live reloading
+
+'''
+:previous-slide-number:
+
+= Advanced Features
+
+* Smart typographic link:https://github.com/pnevyk/tipograph[substitution]
+* Inline and block math:{LaTeX{}}[]
+  link:https://github.com/Khan/KaTeX[typesetting]
+* Local server with multiple devices synchronization and live reloading
+* Export to full-featured HTML file with all assets embedded (even from network)
+
+'''
+:previous-slide-number:
+
+= Advanced Features
+
+* Smart typographic link:https://github.com/pnevyk/tipograph[substitution]
+* Inline and block math:{LaTeX{}}[]
+  link:https://github.com/Khan/KaTeX[typesetting]
+* Local server with multiple devices synchronization and live reloading
+* Export to full-featured HTML file with all assets embedded (even from network)
+* Watch mode and automatic rebuild
+
+'''
+:previous-slide-number:
+
+= Advanced Features
+
+* Smart typographic link:https://github.com/pnevyk/tipograph[substitution]
+* Inline and block math:{LaTeX{}}[]
+  link:https://github.com/Khan/KaTeX[typesetting]
+* Local server with multiple devices synchronization and live reloading
+* Export to full-featured HTML file with all assets embedded (even from network)
+* Watch mode and automatic rebuild
+* Changing aspect ratio on demand -- `R`
+
+'''
+
+= Features on the way
+
+* Slide notes and speaker mode
+* PDF export
+* Videos, tables and other more advanced formatting
+* Customizable layout via blocks
 
 '''
 
 = Usage
+
+* Write your awesome content
 
 [source, asciidoc]
 ----
@@ -37,10 +113,31 @@ link:http://asciidoctor.org/[AsciiDoc] syntax (very similar to Markdown)
 
 = First slide
 
-* Hellow world
+* Hello world
+----
+
+'''
+
+= Usage
+
+* Use preleganto for the rest
+
+[source, bash]
+----
+# basic build
+preleganto build --input example.adoc
 ----
 
 [source, bash]
 ----
-preleganto build --input presentation.adoc
+# local server
+preleganto serve --input example.adoc
 ----
+
+'''
+
+= Installation
+
+. You need link:https://nodejs.org/en/[Node.js] (at least 8.0.0) with NPM
+. Install preleganto: `npm install -g preleganto`
+. That's it!

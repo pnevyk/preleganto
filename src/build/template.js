@@ -4,7 +4,7 @@ import type { BuildOptions } from '../config';
 
 import path from 'path';
 
-import { readFile, embedFonts } from './embedding';
+import { readFile, embedFonts, isLocal } from './embedding';
 import { map } from '../async';
 
 export type Asset = { filepath: string, options: { [key: string]: string | boolean } };
@@ -76,7 +76,7 @@ export default class Template {
     }
 
     async _compileCss(css: { filepath: string, options: { [key: string ]: string | boolean } }): Promise<string> {
-        if (this._options.embed) {
+        if (this._options.embed || isLocal(css.filepath)) {
             const cssSource = await readFile(css.filepath).then(content => content.toString());
             return `<style type="text/css" ${this._compileExtras(css.options)}>
                 ${await embedFonts(cssSource, path.dirname(css.filepath))}
@@ -87,7 +87,7 @@ export default class Template {
     }
 
     async _compileJs(js: { filepath: string, options: { [key: string ]: string | boolean } }): Promise<string> {
-        if (this._options.embed) {
+        if (this._options.embed || isLocal(js.filepath)) {
             return `<script type="text/javascript" ${this._compileExtras(js.options)}>
                 ${await readFile(js.filepath).then(content => content.toString())}
             </script>`;

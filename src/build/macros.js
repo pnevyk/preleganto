@@ -7,7 +7,7 @@ import path from 'path';
 import katex from 'katex';
 
 import { warn } from '../logger';
-import { embedImage } from './embedding';
+import { embedImage, isLocal } from './embedding';
 
 export default async function (macro: NodeTextMacro, rootpath: string): Promise<string> {
     switch (macro.macro) {
@@ -21,11 +21,6 @@ export default async function (macro: NodeTextMacro, rootpath: string): Promise<
             warn(`unknown macro: ${macro.macro}`);
             return macro.value;
     }
-}
-
-function isLocal(filepath: string): boolean {
-    const protocols = /^https?/;
-    return !protocols.test(filepath);
 }
 
 function link(macro: NodeTextMacro, rootpath: string): string {

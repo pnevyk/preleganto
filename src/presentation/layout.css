@@ -45,3 +45,28 @@ img {
 .katex {
     white-space: normal; /* fix spaces in katex output */
 }
+
+@media (max-width: 1100px) {
+    body {
+        font-size: 3vh;
+    }
+
+    section.preleganto-slide > section {
+        padding: 3vh 3vw 3vh 3vw;
+    }
+
+    h1 {
+        margin-top: 0;
+        font-size: 5vh;
+    }
+
+    h2 {
+        margin-top: 0;
+        font-size: 4vh;
+    }
+
+    h3 {
+        margin-top: 0;
+        font-size: 3.5vh;
+    }
+}

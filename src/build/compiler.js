@@ -84,6 +84,7 @@ export default class Compiler {
                 template.addSlide(theme.renderContent({
                     content: content.join('\n'),
                     ...slidesInfo[i],
+                    ...metadata,
                 }));
             }
 
