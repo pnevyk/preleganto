@@ -33,7 +33,7 @@ export default class Template {
         return this;
     }
 
-    setMetadata(metadata: { [key: string]: string }): Template {
+    setMetadata(metadata: { [key: string]: mixed }): Template {
         this._metadata = Object.assign(this._metadata, metadata);
         return this;
     }
