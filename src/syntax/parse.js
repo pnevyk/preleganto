@@ -60,7 +60,8 @@ export type NodeContent =
     NodeParagraph |
     NodeOrderedList |
     NodeUnorderedList |
-    NodeSpecialBlock;
+    NodeSpecialBlock |
+    NodeComment;
 
 export type NodeText = {
     name: 'Text',
@@ -94,6 +95,11 @@ export type NodeSpecialBlock = {
     block: string,
     value: string,
     args: Array<string>,
+};
+
+export type NodeComment = {
+    name: 'Comment',
+    value: string,
 };
 
 export type Node =
@@ -196,6 +202,12 @@ const node = {
             value,
             args
         };
+    },
+    comment(value: string): NodeComment {
+        return {
+            name: 'Comment',
+            value
+        };
     }
 };
 
@@ -267,6 +279,8 @@ function parse(tokens: Array<Token>, pointer: number, state: State, level: numbe
                 }
             } else if (token.name === 'SpecialBlock') {
                 value.push(node.specialBlock(token.block, token.value, token.args));
+            } else if (token.name === 'Comment') {
+                value.push(node.comment(token.value));
             } else {
                 warn(`unimplemented token: ${token.name}`);
             }

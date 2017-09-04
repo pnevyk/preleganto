@@ -17,7 +17,6 @@ export type TokenSlideSepataror = {
     name: 'SlideSeparator',
 };
 
-
 export type TokenHeading = {
     name: 'Heading',
     level: number,
@@ -57,6 +56,11 @@ export type TokenParagraph = {
     value: string,
 };
 
+export type TokenComment = {
+    name: 'Comment',
+    value: string,
+};
+
 export type Token =
     TokenMetadata |
     TokenSlideSepataror |
@@ -66,7 +70,8 @@ export type Token =
     TokenLayoutBlockOpen |
     TokenLayoutBlockClose |
     TokenSpecialBlock |
-    TokenParagraph;
+    TokenParagraph |
+    TokenComment;
 
 const token = {
     metadata(key: string, value: string): TokenMetadata {
@@ -126,6 +131,12 @@ const token = {
             name: 'Paragraph',
             value
         };
+    },
+    comment(value: string): TokenComment {
+        return {
+            name: 'Comment',
+            value
+        };
     }
 };
 
@@ -138,6 +149,7 @@ const REGEX_UNORDERED_LIST_ITEM = /^(\*{1,5})\s+(.*)$/;
 const REGEX_BLOCK_HEADER = /^\[(.+)\]$/;
 const REGEX_LAYOUT_BLOCK_MARKER = /^--$/;
 const REGEX_SPECIAL_BLOCK_MARKER = /^----$/;
+const REGEX_INLINE_COMMENT = /^\/\/.*$/;
 
 function tokenize(content: string): Array<Token> {
     const input = new Input(content);
@@ -190,6 +202,10 @@ function tokenize(content: string): Array<Token> {
 
         } else if (REGEX_LAYOUT_BLOCK_MARKER.test(line)) {
             tokens.push(token.layoutBlockClose());
+
+        } else if (REGEX_INLINE_COMMENT.test(line)) {
+            const value = line.slice(2);
+            tokens.push(token.comment(value));
 
         } else if (REGEX_PLAIN_LINE.test(line)) {
             const value = line + eatPlainLines(input);
