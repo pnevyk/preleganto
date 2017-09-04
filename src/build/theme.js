@@ -17,6 +17,7 @@ const DEFAULT_THEME_DIR = path.join(__dirname, '..', '..', 'themes', 'default');
 export default class Theme {
     _options: BuildOptions;
     _style: string;
+    _script: string;
 
     _content: Renderer;
     _opening: Renderer;
@@ -37,6 +38,13 @@ export default class Theme {
         } else {
             warn('style not found: theme style was not found so fallback to default theme will be used');
             this._style = path.join(DEFAULT_THEME_DIR, 'style.css');
+        }
+
+        if (fs.statSync(path.join(themedir, 'script.js')).isFile()) {
+            this._script = path.join(themedir, 'script.js');
+        } else {
+            warn('script not found: theme script was not found so fallback to default theme will be used');
+            this._script = path.join(DEFAULT_THEME_DIR, 'script.js');
         }
 
         this._content = ejs.compile(this._loadTemplate(themedir, 'content.html'));
@@ -73,6 +81,10 @@ export default class Theme {
 
     getStyle(): string {
         return this._style;
+    }
+
+    getScript(): string {
+        return this._script;
     }
 
     _loadTemplate(themedir: string, asset: Template): string {

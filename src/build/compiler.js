@@ -56,6 +56,7 @@ export default class Compiler {
 
             // local scripts
             template.addJs(path.join(PRESENTATION_ASSETS_DIR, 'control.js'));
+            template.addJs(theme.getScript());
 
             // custom styles
             if (metadata.customStyle) {
