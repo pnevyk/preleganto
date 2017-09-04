@@ -1,10 +1,12 @@
 // @flow
+/* eslint max-lines: 0 */
 
 type Metadata = {
     ratio: string,
     title?: string,
     author?: string,
     theme?: string,
+    notes: Array<string>,
 };
 
 type InputEvent = 'previous' | 'next' | 'ratio' | 'beginning' | 'end' | 'backward' | 'forward' | 'speakermode';
@@ -67,12 +69,16 @@ type ServerAction = {
                             command = 'slides';
                             startXFactors.push(ev.touches[0].clientX / window.innerWidth);
                             startYFactors.push(ev.touches[0].clientY / window.innerHeight);
-                            ev.preventDefault();
                         } else if (ev.touches.length === 2) {
                             // toggle speaker mode with two fingers in vertical direction
                             command = 'speakermode';
                             startYFactors.push(ev.touches[0].clientY / window.innerHeight);
                             startYFactors.push(ev.touches[1].clientY / window.innerHeight);
+                        }
+                    });
+
+                    body.addEventListener('touchmove', (ev: TouchEvent) => {
+                        if (command !== null) {
                             ev.preventDefault();
                         }
                     });
@@ -114,7 +120,6 @@ type ServerAction = {
                                         this._emit('speakermode');
                                     }
                                 } else {
-                                    ev.preventDefault();
                                     return;
                                 }
                             }
@@ -124,18 +129,17 @@ type ServerAction = {
                             startXFactors = [];
                             startYFactors = [];
                             endYFactors = [];
-                            ev.preventDefault();
+                            // ev.preventDefault();
                         }
                     });
 
-                    body.addEventListener('touchcancel', (ev: TouchEvent) => {
+                    body.addEventListener('touchcancel', () => {
                         if (command) {
                             // reset variables
                             command = null;
                             startXFactors = [];
                             startYFactors = [];
                             endYFactors = [];
-                            ev.preventDefault();
                         }
                     });
                 }
@@ -185,6 +189,113 @@ type ServerAction = {
         }
     }
 
+    class SpeakerMode {
+        _isEnabled: boolean;
+        _timer: number;
+        _running: boolean;
+        _timerId: number;
+
+        _elements: {
+            view: HTMLElement,
+            timer: HTMLElement,
+            startStop: HTMLElement,
+            reset: HTMLElement,
+            notes: HTMLElement,
+        }
+
+        constructor() {
+            this._isEnabled = false;
+            this._timer = 0;
+            this._running = false;
+
+            let view = utils.select('#preleganto-speaker-view');
+            let timer = utils.select('#preleganto-speaker-view-timer');
+            let startStop = utils.select('#preleganto-speaker-view-timer-start-stop');
+            let reset = utils.select('#preleganto-speaker-view-timer-reset');
+            let notes = utils.select('#preleganto-speaker-view-notes');
+
+            if (view instanceof HTMLElement && timer instanceof HTMLElement && startStop instanceof HTMLElement &&
+                reset instanceof HTMLElement && notes instanceof HTMLElement) {
+                this._elements = { view, timer, startStop, reset, notes };
+
+                this._displayTime();
+
+                startStop.addEventListener('click', (ev: MouseEvent) => {
+                    if (ev.target instanceof HTMLElement) {
+                        if (ev.target.textContent === 'Start') {
+                            ev.target.textContent = 'Stop';
+                            this._startTimer();
+                        } else {
+                            ev.target.textContent = 'Start';
+                            this._stopTimer();
+                        }
+                    }
+                });
+
+                reset.addEventListener('click', (ev: MouseEvent) => {
+                    if (ev.target instanceof HTMLElement) {
+                        this._timer = 0;
+                        this._stopTimer();
+                        this._displayTime();
+
+                        if (startStop) {
+                            startStop.textContent = 'Start';
+                        }
+                    }
+                });
+            } else {
+                throw new Error('Cannot find a HTML element in Speaker view');
+            }
+        }
+
+        isEnabled(): boolean {
+            return this._isEnabled;
+        }
+
+        toggle() {
+            this._isEnabled = !this._isEnabled;
+
+            if (this._isEnabled) {
+                this._elements.view.style.display = 'block';
+            } else {
+                this._elements.view.style.display = 'none';
+            }
+        }
+
+        setNotes(html: string) {
+            this._elements.notes.innerHTML = html;
+        }
+
+        _startTimer() {
+            this._running = true;
+            this._timerId = setInterval(() => {
+                this._timer++;
+                this._displayTime();
+            }, 1000);
+        }
+
+        _stopTimer() {
+            this._running = false;
+            clearInterval(this._timerId);
+        }
+
+        _displayTime() {
+            let seconds = this._timer % 60;
+            let minutes = ((this._timer - seconds) / 60) % 60;
+            let hours = ((this._timer - seconds) / 60 - minutes) / 60;
+
+            function pad(value: number): string {
+                if (value < 10) {
+                    return '0' + value;
+                } else {
+                    return String(value);
+                }
+            }
+
+            this._elements.timer.textContent = `${hours}:${pad(minutes)}:${pad(seconds)}`;
+        }
+    }
+
     class Preleganto {
         _metadata: Metadata;
 
@@ -198,6 +309,8 @@ type ServerAction = {
 
         _supportedRatios: Array<string>;
         _currentRatio: string;
+
+        _speakerMode: SpeakerMode;
 
         constructor() {
             this._initMetadata();
@@ -224,7 +337,12 @@ type ServerAction = {
                 }
             }
 
-            window.scrollTo(0, this._slides[this._current].offsetTop);
+            if (!this._speakerMode.isEnabled()) {
+                window.scrollTo(0, this._slides[this._current].offsetTop);
+            } else {
+                this._speakerMode.setNotes(this._metadata.notes[this._current]);
+            }
+
             window.location.hash = `view-${this._current + 1}`;
             return this._current;
         }
@@ -260,6 +378,25 @@ type ServerAction = {
             this._setSlidesSize([window.innerWidth, window.innerHeight]);
         }
 
+        toggleSpeakerMode() {
+            if (this._speakerMode.isEnabled()) {
+                this._slides.forEach(element => {
+                    element.style.display = 'block';
+                });
+
+                this.goTo(this._current, false);
+            } else {
+                this._slides.forEach(element => {
+                    element.style.display = 'none';
+                });
+
+                window.scrollTo(0, 0);
+                this._speakerMode.setNotes(this._metadata.notes[this._current]);
+            }
+
+            this._speakerMode.toggle();
+        }
+
         getCurrent(): number {
             return this._current;
         }
@@ -287,7 +424,8 @@ type ServerAction = {
             } else {
                 console.warn('Cannot find Preleganto metadata. The presentation will run in limited mode.');
                 this._metadata = {
-                    ratio: '16:10'
+                    ratio: '16:10',
+                    notes: []
                 };
             }
 
@@ -298,6 +436,7 @@ type ServerAction = {
             }
 
             this._currentRatio = this._metadata.ratio;
+            this._speakerMode = new SpeakerMode();
         }
 
         _initSlides() {
@@ -329,6 +468,7 @@ type ServerAction = {
             this._input.on('backward', () => this.backward());
             this._input.on('forward', () => this.forward());
             this._input.on('ratio', () => this.switchRatio());
+            this._input.on('speakermode', () => this.toggleSpeakerMode());
         }
 
         _initSocket() {

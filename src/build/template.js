@@ -66,6 +66,16 @@ export default class Template {
                     <main class="preleganto-presentation">
                         ${this._slides.map(this._compileSlide, this).join('\n')}
                     </main>
+                    <section id="preleganto-speaker-view">
+                        <section id="preleganto-speaker-view-header">
+                            <section id="preleganto-speaker-view-timer"></section>
+                            <section id="preleganto-speaker-view-controls">
+                                <button id="preleganto-speaker-view-timer-start-stop">Start</button>
+                                <button id="preleganto-speaker-view-timer-reset">Reset</button>
+                            </section>
+                        </section>
+                        <section id="preleganto-speaker-view-notes"></section>
+                    </section>
                     <script type="text/preleganto-metadata">
                         ${this._compileMetadata()}
                     </script>
