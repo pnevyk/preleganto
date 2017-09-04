@@ -46,6 +46,53 @@ img {
     white-space: normal; /* fix spaces in katex output */
 }
 
+#preleganto-speaker-view {
+    display: none;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1200px;
+    height: 100vh;
+    padding: 7vh 7vw 7vh 7vw;
+    background-color: #ffffff;
+    color: #000000;
+    font-size: 3vh;
+    font-family: Helvetica, sans-serif;
+}
+
+#preleganto-speaker-view-header {
+    display: flex;
+}
+
+#preleganto-speaker-view-timer {
+    flex-grow: 1;
+    font-size: 5vh;
+}
+
+#preleganto-speaker-view-controls {
+    font-size: 3vh;
+}
+
+#preleganto-speaker-view button {
+    background-color: #000000;
+    color: #ffffff;
+    padding: 1vh;
+    border: none;
+    cursor: pointer;
+    width: 4em;
+}
+
+#preleganto-speaker-view-notes {
+    margin-top: 2vh;
+    padding-top: 2vh;
+    border-top: 1px solid #000000;
+}
+
+#preleganto-speaker-view-notes p {
+    margin-top: 1vh;
+    margin-bottom: 1vh;
+}
+
 @media (max-width: 1100px) {
     body {
         font-size: 3vh;
@@ -68,5 +115,9 @@ img {
     h3 {
         margin-top: 0;
         font-size: 3.5vh;
+    }
+
+    #preleganto-speaker-view {
+        padding: 3vh 3vw 3vh 3vw;
     }
 }

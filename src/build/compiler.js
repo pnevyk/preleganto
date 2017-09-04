@@ -71,11 +71,9 @@ export default class Compiler {
                 template.setTitle(metadata.title);
             }
 
-            // metadata
-            template.setMetadata(metadata);
-
             // content
             template.addSlide(theme.renderOpening({ ...metadata }));
+            let notes = ['']; // "notes" for opening slide
 
             const slidesInfo = getSlidesInfo(tree.slides);
 
@@ -86,10 +84,18 @@ export default class Compiler {
                     ...slidesInfo[i],
                     ...metadata,
                 }));
+
+                notes.push(getNotes(tree.slides[i]).map(note => `<p>${note}</p>`).join(''));
             }
 
             template.addSlide(theme.renderClosing({ ...metadata }));
+            notes.push(''); // "notes" for closing slide
 
+            // metadata
+            template.setMetadata({
+                ...metadata,
+                notes
+            });
 
             return template.toHtml();
         } else {
@@ -174,6 +180,18 @@ function getSlidesInfo(slides: Array<NodeSlide>): Array<SlideInfo> {
     return slidesInfo;
 }
 
+function getNotes(node: NodeSlide): Array<string> {
+    let notes = [];
+
+    for (let child of node.value) {
+        if (child.name === 'Comment') {
+            notes.push(child.value);
+        }
+    }
+
+    return notes;
+}
+
 function typography(text: string): string {
     return tipograph.Replace.all(text);
 }
@@ -213,6 +231,8 @@ async function compile(node: Node, rootpath: string): Promise<string> {
             return typography(temp);
         case 'SpecialBlock':
             return applyBlock(node);
+        case 'Comment':
+            return '';
         default:
             warn(IMPLEMENTATION_ERROR_MESSAGE);
             return '';
