@@ -1,6 +1,7 @@
 // @flow
 
 import fs from 'fs';
+import os from 'os';
 
 import express from 'express';
 import http from 'http';
@@ -47,9 +48,32 @@ export default class Server {
         this._server.listen(this._options.port);
         this._server.on('listening', () => {
             // use server.address().port because when port given by user is invalid, server can assign different port
-            const address = chalk.magenta(`http://localhost:${this._server.address().port}`);
-            log(`Local server is running at ${address}`);
+            const port = this._server.address().port;
+
+            const local = chalk.magenta(`http://localhost:${port}`);
+            log(`Local server is running at ${local}`);
             newline();
+
+            const interfaces = os.networkInterfaces();
+            const remotes = Object.keys(interfaces)
+                .reduce((all, item) => {
+                    // filter only ipv4 addresses, because it's not quite common to type ipv6 manually yet
+                    const addresses = interfaces[item]
+                        .filter(network => !network.internal && network.family === 'IPv4')
+                        .map(network => network.address);
+
+                    return all.concat(...addresses);
+                }, []);
+
+            if (remotes.length > 0) {
+                log('For connecting from a remote device, try addresses below:');
+
+                for (let remote of remotes) {
+                    log(chalk.magenta(`http://${remote}:${port}`));
+                }
+
+                newline();
+            }
         });
     }
 
