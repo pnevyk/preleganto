@@ -11,6 +11,9 @@
 * Convenient command line interface
 * Some advanced features
 
+// There are many of presentation tools out there
+// AsciiDoc has more syntactic features than Markdown
+
 '''
 
 = Motivation
@@ -19,6 +22,9 @@
 * Often, they require some manual touch with HTML source itself
 * They don't offer something more than generating a nice presentation
 
+// I was frustrated by the solution I was using
+// I needed something more
+
 '''
 
 = Must-have Features
@@ -26,8 +32,11 @@
 * Transforming markup to HTML
 * Text formatting, links, images, ...
 * Built-in and custom themes and layouts
+* Slide notes and speaker mode -- `S`
 * Source code link:https://github.com/PrismJS/prism[highlighting]
 * Touch devices support
+
+// These features must be in every presentation tool
 
 '''
 
@@ -94,7 +103,6 @@
 
 = Features on the way
 
-* Slide notes and speaker mode
 * PDF export
 * Videos, tables and other more advanced formatting
 * Customizable layout via blocks
@@ -141,3 +149,5 @@ preleganto serve --input example.adoc
 . You need link:https://nodejs.org/en/[Node.js] (at least 8.0.0) with NPM
 . Install preleganto: `npm install -g preleganto`
 . That's it!
+
+// Some modern JavaScript features are used and they are not supported by older versions
