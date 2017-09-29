@@ -151,3 +151,10 @@ preleganto serve --input example.adoc
 . That's it!
 
 // Some modern JavaScript features are used and they are not supported by older versions
+
+'''
+
+= Next steps
+
+* See the project on link:https://github.com/pnevyk/preleganto[GitHub]
+* Read the link:https://github.com/pnevyk/preleganto/tree/develop/docs[documentation]
